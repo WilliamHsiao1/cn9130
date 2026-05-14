@@ -1,0 +1,278 @@
+From 324635fea273c1619d8f1b8f565708c75c8d5f3f Mon Sep 17 00:00:00 2001
+From: Tanmay Jagdale <tanmay@marvell.com>
+Date: Sat, 17 Oct 2020 23:45:24 +0530
+Subject: [PATCH 4/4] packages: opencsd: add a script for sysfs
+
+Add a script to collect trace from coresight through sysfs
+interface. This script offers the following option:
+- Trace a particular application on a CPU
+- Enable/disable trace on a single CPU or all
+- Reading trace from a single CPU or all
+- Analyse the captured trace by generating instruction trace.
+
+Signed-off-by: Tanmay Jagdale <tanmay@marvell.com>
+---
+ README-coresight-sysfs.txt |  85 ++++++++++++++++++++
+ coresight-sysfs.sh         | 158 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 243 insertions(+)
+ create mode 100644 README-coresight-sysfs.txt
+ create mode 100755 coresight-sysfs.sh
+
+diff --git a/README-coresight-sysfs.txt b/README-coresight-sysfs.txt
+new file mode 100644
+index 0000000..71bc37b
+--- /dev/null
++++ b/README-coresight-sysfs.txt
+@@ -0,0 +1,85 @@
++			CORESIGHT-SYSFS
++			---------------
++OPTIONS:
++analyse  <cpu> <objdump-file>
++		Analyse trace for the given <cpu> based on object file
++		by generating an instruction trace. The object dump
++		file could kernel or application.
++		LIMITATION:
++		  If the application uses dynamically linked libraries
++		  then we would not get a complete instruction trace
++		  of the application since only the instructions from
++		  provided objdump can be matched.
++
++apptrace <cpu> <application>
++		Run the given application on specified CPU and capture
++		trace. It stores the captured raw trace data as a file
++		named cstrace<cpu>.bin in /otx2 directory.
++		To analyse this raw trace data 'analyse' command needs
++		to be run.
++
++enable   <cpu> | 'a' for all CPUs
++		Enable tracing on specified CPU or all CPUs if 'a' is
++		passed. This just enables hardware tracing on the
++		given CPU(s) and user can continue using the system.
++		NOTE: The trace data does not get stored in any file.
++		      To get the trace data, need to run 'get-trace'
++		      command.
++
++disable  <cpu> | 'a' for all CPUs
++		Stop tracing on specified CPU or all CPUs if 'a' is
++		passed. This just disables the hardware tracing on
++		the given CPU(s) and user can continue using the
++		system.
++		NOTE: The trace data does not get stored in any file.
++		      To get the trace data, need to run 'get-trace'
++		      command.
++
++get-trace <cpu> | 'a' for all CPUs
++		Get the raw trace data collected for specified CPU or
++		all CPUs if 'a' is passed. The result is stored as a
++		file in the /otx2 directory with the name
++		cstrace<cpu>.bin.
++
++EXAMPLES
++--------
++
++1.  To capture the trace of an application by running it on CPU2
++
++	$ coresight-sysfs.sh apptrace 2 ls -l
++
++
++2. Analyse the trace captured from example 1.
++
++	$ objdump -xd /usr/bin/ls > ls.objdump
++	$ coresight-sysfs.sh analyse 2 ls.objdump
++
++
++3. Debugging issues that occur at random time.
++
++   # Enable trace on all CPUs and continue running the tests
++
++	$ coresight-sysfs.sh enable a
++
++	$ <run-test-case>
++
++   # After the issue occurs, we can collect the trace data by
++
++	$ coresight-sysfs.sh get-trace a
++
++   # Now can disable the tracing on all CPUs
++
++	$ coresight-sysfs.sh disable a
++
++   # Next need to analyse the trace of each CPU one by one by passing
++   # the objdump file. If the issue is with the kernel, we can pass
++   # the kcore file
++
++	$ objdump -d --section load1 /proc/kcore > kernel.objdump
++
++   # Analyse kernel trace of CPU 1, 2, 3, 4
++
++	$ coresight-sysfs.sh analyse 1 kernel.objdump
++	$ coresight-sysfs.sh analyse 2 kernel.objdump
++	$ coresight-sysfs.sh analyse 3 kernel.objdump
++	$ coresight-sysfs.sh analyse 4 kernel.objdump
+diff --git a/coresight-sysfs.sh b/coresight-sysfs.sh
+new file mode 100755
+index 0000000..766186d
+--- /dev/null
++++ b/coresight-sysfs.sh
+@@ -0,0 +1,158 @@
++#!/bin/bash
++
++LINUXVER=`uname -r | cut -d . -f 1`
++etm=etm0
++etr=tmc_etr0
++ncpus=`nproc`
++ncpus=$((ncpus - 1))
++
++# Setup the ETM and ETR sysfs filenames
++setup_etm_and_etr_sysfs_name()
++{
++	if [ $LINUXVER -eq 5 ]
++	then
++		etm=etm$1
++		etr=tmc_etr$1
++	else
++		printf -v etm_base '%x' "$((0x87a008030000 + (0x80000 * $1)))"
++		printf -v etr_base '%x' "$((0x87a008040000 + (0x80000 * $1)))"
++		etm=$etm_base.etm$1
++		etr=$etr_base.etr$1
++	fi
++}
++
++# Capture trace of specified application on CPU
++app_trace()
++{
++	echo "Capturing trace on CPU $1"
++	setup_etm_and_etr_sysfs_name $1
++	tracebufsize=`cat /sys/bus/coresight/devices/$etr/tracebuffer_size`
++	printf -v bufsize '%d' "$tracebufsize"
++
++	echo 1 > /sys/bus/coresight/devices/$etr/enable_sink
++	echo 1 > /sys/bus/coresight/devices/$etm/enable_source
++	taskset -c $1 $2 ${@:5}
++	dd if=/dev/$etr of=/otx2/cstrace$1.bin bs=$bufsize count=2
++	echo 0 > /sys/bus/coresight/devices/$etr/enable_sink
++	echo 0 > /sys/bus/coresight/devices/$etm/enable_source
++}
++
++# Enable or Disable tracing on specified CPU
++configure_trace()
++{
++	if [ $2 -eq 1 ]
++	then
++		status="Enabling"
++	else
++		status="Disabling"
++	fi
++
++	if [ "$1" == "a" ]
++	then
++		for i in `seq 0 $ncpus`
++		do
++			echo $status "trace on CPU $i"
++			setup_etm_and_etr_sysfs_name $i
++			echo $2 > /sys/bus/coresight/devices/$etr/enable_sink
++			echo $2 > /sys/bus/coresight/devices/$etm/enable_source
++		done
++	else
++		echo $status "trace on CPU $1"
++		setup_etm_and_etr_sysfs_name $1
++		echo $2 > /sys/bus/coresight/devices/$etr/enable_sink
++		echo $2 > /sys/bus/coresight/devices/$etm/enable_source
++	fi
++}
++
++# Get trace data from CPU (Useful for Previous boot scenario)
++get_trace()
++{
++	if [ "$1" == "a" ]
++	then
++		for i in `seq 0 $ncpus`
++		do
++			echo "Reading trace from CPU $i"
++			setup_etm_and_etr_sysfs_name $i
++			tracebufsize=`cat /sys/bus/coresight/devices/$etr/tracebuffer_size`
++			printf -v bufsize '%d' "$tracebufsize"
++			dd if=/dev/$etr of=/otx2/cstrace$i.bin bs=$bufsize count=2
++		done
++	else
++		echo "Reading trace from CPU $1"
++		setup_etm_and_etr_sysfs_name $1
++		tracebufsize=`cat /sys/bus/coresight/devices/$etr/tracebuffer_size`
++		printf -v bufsize '%d' "$tracebufsize"
++		dd if=/dev/$etr of=/otx2/cstrace$1.bin bs=$bufsize count=2
++	fi
++}
++
++# Decode trace on specified CPU
++decode_trace()
++{
++	echo "Decoding trace on CPU $1"
++	# check if cstrace.bin file is present for specified cpu
++	if [ ! -e /otx2/cstrace$1.bin ]
++	then
++		echo "ERROR: Trace file not found for CPU $1"
++		exit 1
++	fi
++	cp /otx2/cstrace$1.bin /otx2/cstrace.bin
++	c_api_pkt_print_test -ss_path / > /otx2/cstrace$1.trace
++}
++
++# Print the program instruction trace for CPU based on object dump file
++analyse_program_trace()
++{
++	decode_trace $1
++	python /usr/share/opencsd/coresight-trace.py $2 /otx2/cstrace$1.trace
++}
++
++usage()
++{
++	echo "Usage: $0 [OPTIONS]"
++	echo "OPTIONS:"
++	echo "  analyse   <cpu> <objdump-file> - Generate instruction trace for CPU based on"
++	echo "                                   kernel/application object file"
++	echo "  apptrace  <cpu> <application>  - Run application on specified CPU and capture trace"
++	echo "  enable    <cpu>                - Enable tracing on specified CPU or all CPUs"
++	echo "  disable   <cpu>                - Stop tracing on specified CPU or all CPUs"
++	echo "  get-trace <cpu>                - Get trace data collected for specified CPU"
++	echo "  help                           - Show detailed information about this script"
++	echo ""
++        echo "NOTE: Pass 'a' as <cpu> argument for enable/disable/get-trace options"
++	echo "      to trace on online CPUs"
++}
++
++case "${1}" in
++	analyse)
++		cpu=$2
++		objectfile=$3
++		analyse_program_trace $cpu $objectfile
++		;;
++	apptrace)
++		cpu=$2
++		app=$3
++		app_args="${@:2}"
++		sysctl kernel.randomize_va_space=0
++		app_trace $cpu $app $app_args
++		;;
++	enable)
++		cpu=$2
++		configure_trace $cpu 1
++		;;
++	disable)
++		cpu=$2
++		configure_trace $cpu 0
++		;;
++	get-trace)
++		cpu=$2
++		get_trace $cpu
++		;;
++	help)
++		cat /usr/share/opencsd/README-coresight-sysfs.txt
++		;;
++	*)
++		echo "Unsupported argument:" $1
++		usage
++		;;
++esac
+-- 
+2.17.1
+

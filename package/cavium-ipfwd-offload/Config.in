@@ -1,0 +1,11 @@
+config BR2_PACKAGE_CAVIUM_IPFWD_OFFLOAD
+	bool "cavium-ipfwd-offload"
+	help
+	  Install the Cavium IP-forwarding offload module into the filesystem.
+
+if BR2_PACKAGE_CAVIUM_IPFWD_OFFLOAD
+
+config BR2_PACKAGE_CAVIUM_IPFWD_OFFLOAD_GIT
+	bool "Obtain Cavium IP-forwarding offload module from GIT"
+
+endif

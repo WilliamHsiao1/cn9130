@@ -1,0 +1,357 @@
+.. _building_release_images:
+
+This documentation is now DEPRECATED.
+Please refer to the compiled HTML documentation provided to you.
+This document was replaced by: "documentation/quickstart/building.html" in the SDK Docs.
+
+Building Release Images
+=======================
+
+Host Operating System
+---------------------
+
+The SDK has been tested and verified on the following OS versions:
+
+- Ubuntu 18.04
+- Ubuntu 20.04
+
+Prerequisites
+-------------
+
+The SDK is built on Linux systems using
+`Buildroot <https://buildroot.org/downloads/manual/manual.html>`_.
+While Buildroot itself will build most host packages it needs for the compilation,
+certain standard Linux utilities are expected to be already installed on the host
+system. Below you will find a command to install the mandatory packages on Ubuntu
+(note that package names may vary between distributions). See
+also: `Buildroot Requirements <https://buildroot.org/downloads/manual/manual.html#requirement>`_.
+
+.. code-block:: shell-session
+
+   $ apt install sed build-essential git cpio python3 unzip rsync bc wget texinfo \
+   > automake libtool pkg-config flex bison uuid-dev lib32stdc++6 lib32z1 \
+   > acpica-tools dosfstools libconfig-dev libmbedtls-dev libnuma-dev \
+   > liblzma-dev libarchive-zip-perl python3-pycryptodome python3-pyelftools \
+   > libfdt-dev libncurses-dev libpci-dev libyaml-dev pkg-config-aarch64-linux-gnu \
+   > python3 python3-sphinx python3-sphinx-rtd-theme libssl-dev \
+   > linux-modules-extra-$(uname -r)
+
+.. note::
+
+   If building on a different Host OS, the following packages must also be installed or have their
+   version specified as they are either handled by ``build-essential`` or preinstalled on Ubuntu:
+
+   - make (version 3.81 or later)
+   - binutils
+   - gcc (version 4.4 or later)
+   - g++ (version 4.4 or later)
+   - bash
+   - patch
+   - gzip
+   - bzip2
+   - perl (version 5.8.7 or later)
+   - tar
+   - python (version 3.6 or later)
+   - file (must be in ``/usr/bin/file``)
+   - autoconf
+   - libconfig-dev (version 1.5 or later)
+
+Installing a Release
+--------------------
+
+The release is distributed as listed in :ref:`release_structure`.
+
+Download these files to a temporary directory (e.g., ~/Downloads).
+
+Create a working directory, ``~/work`` as an example.
+Extract the base SDK:
+
+.. code-block:: shell-session
+
+   $ mkdir ~/work
+   $ cd ~/work
+   $ tar xf ~/Downloads/base_sdk-<release-id>.tar.bz2
+   $ ls base_sdk
+   base-patches-<release-id>  base-sources-<release-id>  buildroot  sdk-base  toolchain
+
+Extract the documentation and point your browser at ``~/work/doc/index.html``:
+
+.. code-block:: shell-session
+
+   $ unzip ../doc-<release-id>.zip
+
+
+At this point all the embedded archives from the SDK are extracted, and the
+package can be compiled.
+
+
+.. _ci_script:
+
+Compiling using compile.sh
+--------------------------
+
+Building a Platform
+~~~~~~~~~~~~~~~~~~~
+
+The following builds images for the ``cn10ka`` platform:
+
+.. code-block:: shell-session
+
+   $ cd base_sdk/sdk-base
+   $ ./scripts/ci/compile.sh cn10ka -r <release-id>
+
+.. note::
+
+   This build will support both ASIM and hardware for CN10KA
+
+This builds according to the sources in ``../base-<release-id>`` (i.e., work/base-|release|).
+The resulting compiled images are deposited in ``~/work/<platform>-release-output/images``.
+
+Other Supported platforms are cnf10ka and cnf10kb. To build firmware for these
+platforms, replace cn10ka from the above command with one of these supported platforms and add the ``-f asim``
+flag as shown below:
+
+.. code-block:: shell-session
+
+   $ ./scripts/ci/compile.sh cnf10ka -f asim -r <release-id>
+
+For more details about Buildroot build system please refer to the official
+`Buildroot user manual <https://buildroot.org/downloads/manual/manual.html>`_.
+
+
+Building a Single Package
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to build a single Buildroot package and all its dependencies using
+the ``-p`` option to this script. For instance, the following command builds only
+the Linux image for ``cn10ka`` target out of release sources:
+
+.. code-block:: shell-session
+
+   $ ./scripts/ci/compile.sh cn10ka -r <release-id> -p linux
+
+.. note::
+
+   Pay attention that making a single package does not mean that the entire root file
+   system gets rebuilt. The single package build only executes the build recipes listed
+   in the "package-name/package-name.mk" file.
+
+The result of a build always remains in the output folder "build" directory and if
+the package Makefile requests it, installed into "staging" and or "host" and or
+"target" directories of the same output folder.
+
+More details about re-building packages is available in the
+`Buildroot user guide <https://buildroot.org/downloads/manual/manual.html#rebuild-pkg>`_.
+
+.. _output_directories:
+
+Building a Generic Extension
+----------------------------
+If the release includes generic extensions, the extension must also be extracted into the working directory
+alongside the base-sdk:
+
+.. code-block:: shell-session
+
+   $ cd ~/work
+   $ tar xf ~/Downloads/base_sdk-<release-id>.tar.bz2
+   $ cd base_sdk
+   $ tar xf ~/Downloads/generic_extension-<ext-name>.tar.bz2
+   $ ls
+   base-patches-<release-id>             base-sources-<release-id>             buildroot                     sdk-base                 toolchain
+   base-patches-<ext-name>-<release-id>  base-sources-<ext-name>-<release-id>  documentation-<ext-name>.zip  sdk-ext-<ext-name>
+
+Then the compile script should be invoked from the ``sdk-ext-<ext-name>`` directory.
+The extension will have one or more possible build-names that can be invoked,
+of the form ``<platform>-<solution>``. The ``<release-id>`` is still
+necessary to pull in the appropriate base SDK files. As an example, the following
+command is used for making ``<solution>`` with ``cn10ka`` as the <platform>:
+
+.. code-block:: shell-session
+
+   $ cd sdk-ext-<ext-name>
+   $ ./scripts/ci/compile.sh cn10ka-<solution> -r <release-id>
+
+.. note::
+
+   Type ``./scripts/ci/compile.sh -l`` for the list of supported parameters. Extensions
+   have different build-names listed as shown in the example below:
+
+   .. code-block:: shell-session
+
+      $ ./scripts/ci/compile.sh -l
+        Supported build names:
+        cn10ka
+
+
+        Solution <solution>
+         Valid only for boards <cn10ka>
+         Build-Examples
+                      <<should be first>>       <<should be last>>
+           compile.sh cn10ka-<solution>       [ options, see --help ]
+           compile.sh [-h | --help] [-l | --list]
+
+
+Building Multiple Generic Extensions
+------------------------------------
+The setup process to build multiple generic extensions is the same as for building a single generic extension,
+except that multiple generic extensions are extracted into the working directory:
+
+.. code-block:: shell-session
+
+   $ cd ~/work
+   $ tar xf ~/Downloads/base_sdk-<release-id>.tar.bz2
+   $ cd base_sdk
+   $ tar xf ~/Downloads/generic_extension-<ext-name-1>.tar.bz2
+   $ tar xf ~/Downloads/generic_extension-<ext-name-2>.tar.bz2
+   base-patches-<release-id>               base-sources-<release-id>               buildroot                       sdk-base                 toolchain
+   base-patches-<ext-name-1>-<release-id>  base-sources-<ext-name-1>-<release-id>  documentation-<ext-name-1>.zip  sdk-ext-<ext-name-1>
+   base-patches-<ext-name-2>-<release-id>  base-sources-<ext-name-2>-<release-id>  documentation-<ext-name-2>.zip  sdk-ext-<ext-name-2>
+
+To build 1 additional extension, enter the unpacked directory for one of the extensions and run compile.sh as follows:
+
+.. code-block:: shell-session
+
+   $ cd sdk-ext-<ext-name-1>
+   $ ./scripts/ci/compile.sh <platform>-<solution> -r <release-id> -m path/to/sdk-ext-<ext-name-2>
+
+For 2 additional extensions, run compile.sh as follows:
+
+.. code-block:: shell-session
+
+   $ cd sdk-ext-<ext-name-1>
+   $ ./scripts/ci/compile.sh <platform>-<solution> -r <release-id> -m path/to/sdk-ext-<ext-name-2>:path/to/sdk-ext-<ext-name-3>
+
+Building a Customer Extension
+-----------------------------
+First, the customer extension must be extracted to the working directory alongside the base SDK:
+
+.. code-block:: shell-session
+
+   $ cd ~/work
+   $ tar xf ~/Downloads/base_sdk-<release-id>.tar.bz2
+   $ cd base_sdk
+   $ tar xf ~/Downloads/customer_extension-<customer-name>-<release-id>.tar.bz2
+   $ ls
+   base-patches-<release-id>  buildroot                          sdk-base                 toolchain
+   base-sources-<release-id>  documentation-<customer-name>.zip  sdk-ext-<customer-name>
+
+Next, check which builds are supported for this customer:
+
+.. code-block:: shell-session
+
+   $ cd sdk-ext-<customer-name>
+   $ ./scripts/ci/compile.sh -l
+   <platform>
+
+
+   Solution <solution>
+    Valid only for boards <platform>
+    Build-Examples
+                 <<should be first>>  <<should be last>>
+      compile.sh <platform>-<solution>        [ options, see --help ]
+      compile.sh [-h | --help] [-l | --list]
+
+.. note::
+
+   Some customer extensions are packaged with multiple generic extensions,
+   meaning that the supported builds output could be as shown below instead:
+
+   .. code-block:: shell-session
+
+      $ ls
+      base-patches-<release-id>  buildroot                          extensions-patches-<ext-name>-<release-id>  sdk-base                 sdk-ext-<ext-name>
+      base-sources-<release-id>  documentation-<customer-name>.zip  extensions-sources-<ext-name>-<release-id>  sdk-ext-<customer-name>  toolchain
+      $ cd sdk-ext-<customer-name>
+      $ ./scripts/ci/compile.sh -l
+        <platform1>
+        <platform2>
+
+      Solution <solution>
+       Valid only for boards <platform1> and <platform2>
+         with 2 variants: <solution>, <solution>-<ext-name>
+       Build-Examples
+                    <<should be first>>        <<should be last>>
+         compile.sh <platform1>-<solution>              [ options, see --help ]
+         compile.sh <platform1>-<solution>-<ext-name>   [ options, see --help ]
+         compile.sh <platform2>-<solution>              [ options, see --help ]
+         compile.sh <platform2>-<solution>-<ext-name>   [ options, see --help ]
+         compile.sh [-h | --help] [-l | --list]
+
+
+Perform the build using one of the valid builds listed by ``./compile.sh -l``:
+
+.. code-block:: shell-session
+
+   $ ./scripts/ci/compile.sh <platform>-<solution> -r <release-id>
+   running compile.sh <platform>
+           compile.sh <platform> -r <release-id> -x <solution>
+   ...
+
+Building with the A0 Workaround Toolchain
+-----------------------------------------
+In order to build with the A0 workaround toolchain and enable A0 workarounds, the ``-a`` flag
+must be added to the build command:
+
+.. code-block:: shell-session
+
+   $ ./scripts/ci/compile.sh <platform> -a -r <release-id>
+
+.. note::
+
+   This flag only applies to cn10k and cnf10k platforms such as cn10ka, cnf10ka, and cnf10kb.
+
+
+Alternative Build Method
+------------------------
+Build the config with the following command:
+
+.. code-block:: shell-session
+
+   $ ./scripts/ci/compile.sh <platform> -r <release-id> -c
+   $ cd ../<platform>-release-output
+
+To build the complete SDK, run the following:
+
+.. code-block:: shell-session
+
+   $ make
+
+To build a single package, run the following:
+
+.. code-block:: shell-session
+
+   $ make <package>
+
+Output Directories
+~~~~~~~~~~~~~~~~~~
+
+When ``compile.sh`` is called, different options cause the output directory
+in the ``work/`` directory to change:
+
+- **-r <release-id>**: ``<build-name>-release-output``
+
+- **-d**: ``output``
+
+- **default**: ``<build-name>-devel-output``
+
+For details on all the output files generated, see :ref:`buildroot_output`.
+
+.. note::
+
+   If using the ``-d`` option, it is important to note that building different
+   targets in the same "output" directory from different SoC families requires
+   cleaning the build.
+
+Check the SDK Version
+~~~~~~~~~~~~~~~~~~~~~
+
+To check the version of the SDK installed on the SoC:
+
+.. code-block:: shell-session
+
+   $ cat /proc/octtx_info
+   board_model: <board model>
+   board_revision: <>
+   board_serial_number: <>
+   SDK Version: <sdk-version-installed>
+   ...

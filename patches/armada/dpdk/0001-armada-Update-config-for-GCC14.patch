@@ -1,0 +1,34 @@
+From 3d9f5d0d9028210835d018c1badcfcf22838d96c Mon Sep 17 00:00:00 2001
+From: Mukul Khilnani <mkhilnani@marvell.com>
+Date: Mon, 17 Mar 2025 20:05:23 +0000
+Subject: [PATCH] armada:Update config for GCC14
+
+Signed-off-by: Mukul Khilnani <mkhilnani@marvell.com>
+Change-Id: I51fc4ab19ae71f2cd90be1246d4fa98f56e54c84
+---
+ config/arm/arm64_armada_linux_gcc | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/config/arm/arm64_armada_linux_gcc b/config/arm/arm64_armada_linux_gcc
+index 90181f409b..1e65dc7df5 100644
+--- a/config/arm/arm64_armada_linux_gcc
++++ b/config/arm/arm64_armada_linux_gcc
+@@ -1,9 +1,10 @@
+ [binaries]
+-c = ['ccache', 'aarch64-marvell-linux-gnu-gcc']
+-cpp = ['ccache', 'aarch64-marvell-linux-gnu-g++']
+-ar = 'aarch64-marvell-linux-gnu-gcc-ar'
+-strip = 'aarch64-marvell-linux-gnu-strip'
+-pkgconfig = 'aarch64-linux-gnu-pkg-config'
++c = ['ccache', 'aarch64-none-linux-gnu-gcc']
++cpp = ['ccache', 'aarch64-none-linux-gnu-g++']
++ar = 'aarch64-none-linux-gnu-gcc-ar'
++strip = 'aarch64-none-linux-gnu-strip'
++pkgconfig = 'pkg-config'
++pkg-config = 'pkg-config'
+ pcap-config = ''
+ 
+ [host_machine]
+-- 
+2.25.1
+

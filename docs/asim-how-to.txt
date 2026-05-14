@@ -1,0 +1,136 @@
+.. _run_asim:
+
+Marvell SoC Simulator Getting Started 
+=====================================
+
+Overview
+--------
+
+The ASIM host environment contains 2 components
+
+    - ASIM core package - provided by Marvell in form of binary package that
+      should be installed on the host machine.
+    - ASIM configurations, ROM files and the simulator startup script - these
+      components are built using buildroot ASIM flavor.
+
+Prerequisites
+-------------
+- SSL Support for eHSM (Applies to all 10x generation)
+
+  - ASIM eHSM is written to use OpenSSL 1.0.2. In particular we test and regress
+    against Open SSL 1.0.2n-fips (2017/12/7). The non-FIPS version should work as well.
+  - The versions past 1.0.2 are not currently supported.  Support for the later versions of
+    Open SSL are planned for the next major drop of ASIM.
+
+- GCC Support for CN10KA’s ML (Machine Learning) block.
+
+  - To support ASIM's ML device the minimum GCC major version is 5.  This is due to
+    C++11 ABI support requirements.
+  - To run without this requirement set the environment var ASIM_USE_ML to '0';
+    i.e. export ASIM_USE_ML=0
+
+- LD Support for CN10KA’s ML (Machine Learning) block.
+
+  - The C++11 ABI requirements also require an updated LD to match the
+    GCC 5 ABI.
+  - ASIM testing uses ld 2.26.1 which was contemporary with GCC 5.4.
+
+Installing Open SSL
+
+1. Install dependencies::
+
+   $ sudo apt update
+   $ sudo apt install build-essential checkinstall zlib1g-dev -y
+   $ cd /tmp
+   $ wget https://www.python.org/ftp/python/3.8.11/Python-3.8.11.tar.xz
+   $ tar -zxf Python-3.8.11.tar.xz
+   $ cd Python-3.8.11 && ./configure && sudo make && sudo make install
+   $ sudo -H pip3 install --upgrade pip
+   $ sudo -H pip3 install pylzma
+
+2. Download & extract source::
+
+   $ cd /usr/local/src/
+   $ wget https://www.openssl.org/source/old/1.0.2/openssl-1.0.2n.tar.gz
+   $ tar -xf openssl-1.0.2n.tar.gz
+   $ cd openssl-1.0.2n
+
+3. Configure & Compile source::
+
+   $ ./config --prefix=/usr/local/openssl-1.0.2n --openssldir=/usr/local/openssl-1.0.2n shared zlib
+   $ make
+   $ make test
+
+4. Install OpenSSL apps & libs::
+
+   $ make install
+
+After successful compilation & installation you shall find all the OpenSSL libs, apps & headers in::
+
+   $ /usr/local/openssl-1.0.2n
+
+Installing ASIM core package
+----------------------------
+
+The ASIM core installation packages
+
+    - The binary asim-<release_id>.tar.bz2 package can be extracted anywhere
+    - The asim binary is compiled to run under Ubuntu 18.04
+
+Following packages are required to run asim, please use "apt" command to install them::
+
+    - libelf1
+    - libedit2
+    - libssl1.0.2n
+
+Building and installing ASIM configurations
+-------------------------------------------
+
+Once the ASIM core package installed on the host machine, there is one
+additional build/installation step required for finishing the ASIM host setup.
+This step will create Marvell SoC configuration files for ASIM and prepare the
+required ROM files from sources in a form suiting the host installation.
+
+1. Follow the Buldroot manuals for extracting and building the Marvell Base SDK
+   with "asim" as the flavor flag.
+   The resulting firmware binaries, ROM binary and root filesystem image will be
+   located in <build_output>/images(:ref:`buildroot_output`) folder::
+
+   $ ./scripts/ci/compile.sh -r <release_id> -f asim cn10ka
+
+   Other supported platforms are cnf10ka, cnf10kb. Replace cn10ka accordingly
+   to build firmware for these platforms.
+
+   All the ASIM start-up script and configuration files will be located in
+   <build_output>/images/asim folder.
+
+Running ASIM
+------------
+
+1. In order to run the simulator, two terminal windows are required::
+
+     - In the first terminal window start the serial port emulator connected to
+       ASIM core using UNIX sockets over port 2000::
+
+       $ uart -h localhost -p 2000
+
+     - In the second terminal window run the simulator for the desired SoC family.
+       The below example uses CN10K_A SoC (cn10ka)::
+
+       $ <build_output>/images/asim/run-asim.sh -a <asim_install_path> \
+         --spi <build_output>/images/flash-cn10ka.img \
+         --mmc <build_output>/images/hdimage.img \
+         --rom <build_output>/images/scp_bl0.exe-cn10ka cn10ka
+
+         Replace cn10ka, all occurances with the platform name used for
+         building firmware.
+
+     - The above startup script supports additional parameters.
+       Type "run-asim.sh -h" for more details.
+
+2. The first terminal window will show the simulated system console messages
+   (output from EBF, ATF, u-boot, etc,).
+   This is the window for user commands input for the boot loader and kernel.
+
+3. The second window shows ASIM core debug messages
+

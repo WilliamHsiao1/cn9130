@@ -1,0 +1,6 @@
+config BR2_PACKAGE_HOST_ZEPHYR
+	bool "zephyr"
+	select BR2_PACKAGE_PYTHON_WEST
+	help
+	  This is Zephyr OS
+	  

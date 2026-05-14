@@ -1,0 +1,8 @@
+config BR2_PACKAGE_PYTHON_PYYAML_INCLUDE
+	bool "python-pyyaml-include"
+	select BR2_PACKAGE_PYTHON_PYYAML
+	default y
+    help
+
+        https://pypi.org/project/pyyaml-include
+

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_pkg_mainline_custom>
+#
+
+frag_txt_cr '#--- Mainline packages - custom adds ---
+' ##
+

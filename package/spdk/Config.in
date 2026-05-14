@@ -1,0 +1,36 @@
+config BR2_PACKAGE_SPDK
+	bool "spdk"
+	depends on BR2_PACKAGE_DPDK
+	help
+	  Install spdk package into the filesystem.
+
+if BR2_PACKAGE_SPDK
+
+config BR2_PACKAGE_SPDK_CUSTOM_GIT
+	bool "Obtain SPDK from GIT"
+
+config BR2_PACKAGE_SPDK_CUSTOM_ARCHIVE
+	bool "Obtain SPDK from TAR ball"
+
+if BR2_PACKAGE_SPDK_CUSTOM_GIT
+
+config BR2_PACKAGE_SPDK_CUSTOM_REPO_URL
+	string "SPDK repository URL"
+
+config BR2_PACKAGE_SPDK_CUSTOM_REPO_VERSION
+	string "SPDK repository version"
+
+endif
+
+if BR2_PACKAGE_SPDK_CUSTOM_ARCHIVE
+
+config BR2_PACKAGE_SPDK_CUSTOM_ARCHIVE_LOCATION
+        string "URL of custom spdk archive"
+        depends on BR2_PACKAGE_SPDK_CUSTOM_ARCHIVE
+
+endif
+
+config BR2_PACKAGE_SPDK_WITH_RDMA
+	bool "spdk-with-rdma"
+
+endif

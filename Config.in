@@ -1,0 +1,88 @@
+config BR2_MARVELL_RELEASE_ID
+	string "marvell-release-id"
+	help
+	  The release ID that used in Marvell release archive names
+
+config BR2_MARVELL_SDK13
+        bool "marvell-sdk-version"
+        default y
+        help
+          Marvell SDK version
+
+config BR2_HOST_IS_OCTEON
+        bool "Octeon-is-host"
+        default n
+        help
+          Octeon SoC is the host
+
+config BR2_MARVELL_CN10K_A0
+        bool "marvell-sdk-version"
+        help
+          Marvell SDK version
+
+config BR2_MARVELL_SOC_FAMILY
+        string "MV SoC family: ARMADA3K | ARMADA | OCTEONTX | OCTEONTX2 | CN10K"
+        help
+          SoC family string: ARMADA3K | ARMADA | OCTEONTX | OCTEONTX2 | CN10K
+
+config BR2_MARVELL_DEBUG_ACCESS_SECURE
+        bool "marvell-access-secure"
+        help
+          Marvell debug build with access secure patches
+
+choice
+	prompt "Target install base"
+	help
+	  Select the target platform-dependent installation base
+
+config BR2_MARVELL_CUSTOM_TARGET_INSTALL_BASE
+	bool "use custom target platform-dependent installation directory"
+
+config BR2_MARVELL_DEFAULT_TARGET_INSTALL_BASE
+	bool "/usr/marvell"
+
+endchoice
+
+if BR2_MARVELL_CUSTOM_TARGET_INSTALL_BASE
+
+config BR2_MARVELL_CUSTOM_TARGET_INSTALL_BASE_DIR
+	string "custom target platform-dependent installation directory location"
+endif
+
+config BR2_MARVELL_TARGET_INSTALL_BASE
+	string
+	default "/usr/marvell" if BR2_MARVELL_DEFAULT_TARGET_INSTALL_BASE
+	default BR2_MARVELL_CUSTOM_TARGET_INSTALL_BASE_DIR if BR2_MARVELL_CUSTOM_TARGET_INSTALL_BASE
+
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/boot/uefi/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/boot/marvell-external-fw/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/libtmc/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/schedtool/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/cpt-microcode/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/cavium-ipfwd-offload/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/cavium-xdp-ipfwd/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/build-test/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/libpmt/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/txcsr/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/serdes-cli/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/gator/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/zephyr/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/dpdk/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/dpdk-crypto/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/mrvl-host-utils/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/musdk-marvell/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/is_fw/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/memutils/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/opencsd/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/ovs/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/asim/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/mrvl-mcp-shm/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/optee/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/asimcp/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/spdk/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/mrvl-utils/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/cti/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/socinsight/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/libcnxk-debug/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/package/libipsec-mb/Config.in"
+source "$BR2_EXTERNAL_MARVELL_SDK_PATH/boot/marvell-external-fw/extension-packages/python-pyyaml-include/Config.in"

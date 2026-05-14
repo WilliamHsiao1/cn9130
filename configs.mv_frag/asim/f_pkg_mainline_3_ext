@@ -1,0 +1,27 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_pkg_mainline_3_ext>
+#
+source ${base_frag_path}/f_pkg_mainline_3_ext
+
+if [ $f_pkg_mainline_3_include ]; then
+
+frag_txt_cr '#--- Mainline packages 3 (Netfilter, IPSEC, tools) ---
+BR2_PACKAGE_BIND=n
+BR2_PACKAGE_BIND_TOOLS=n
+BR2_PACKAGE_CONNTRACK_TOOLS=n
+BR2_PACKAGE_DHCP_SERVER=n
+BR2_PACKAGE_DHCPDUMP=n
+BR2_PACKAGE_DNSMASQ=n
+BR2_PACKAGE_DNSMASQ_DNSSEC=n
+BR2_PACKAGE_DNSMASQ_IDN=n
+BR2_PACKAGE_DNSMASQ_CONNTRACK=n
+BR2_PACKAGE_IRQBALANCE=n
+BR2_PACKAGE_SAMBA4=n
+BR2_PACKAGE_STUNNEL=n
+' ##
+
+fi #f_pkg_mainline_3_include

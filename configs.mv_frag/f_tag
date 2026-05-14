@@ -1,0 +1,206 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_tag>
+#
+# This file is quite different from other mv-frag files.
+# It much more like a script having special
+# logic to handle TAG requests coming from compile.sh
+# and overriding the GIT/TARBALL by using config.sh utility.
+# The $tag_generic, $tag_toolchain, $tag_boot_img, $tag_dpdk, $tag_buildroot
+# are coming from compile.sh.
+#
+# Special VARs and TAGs
+#  $tag_toolchain :    248  vs  249
+#  $tag_dpdk      :  23.11 vs 24.11 (dpdk-23.11 vs dpdk-24.11)
+#
+# NOTE:
+#  When editing the content pay ATTENTION to use escape backslash sequence "\$"
+#   ${config_script} ... --set-str ".../\$(variable)/..."     --  correct
+#   ${config_script} ... --set-str ".../$(variable)/..."      -- incorrect
+
+####  LIST  #############################################################
+if [ "$tag_generic" == "list" ]; then
+  echo """
+  TAGs supported by f_tag:
+    TAGboot:
+    TAGtc:     248, 249        (marvell-tools-248.0 vs marvell-tools-249.0)
+    TAGdpdk:   23.11 24.11 25.11  (dpdk-23.11 vs dpdk-24.11 vs dpdk-25.11)
+    TAGkernel: 6.1, 6.6, 6.12 (linux-6.1.x-devel vs linux-6.6.x-devel vs linux-6.12.x-devel)
+    TAGbldr:   202x            (202x.x vs 2020.02.3)
+  """
+  exit -1
+fi
+
+# Set the default OpenSSL to 1.1.x
+${config_script} --enable BR2_PACKAGE_OPENSSL_OLD_VERSION
+
+
+############## Tag_generic Check #####################
+if [[ $tag_generic && ! $tag_generic_correct ]]; then
+  echo " No generic TAG supported by the <f_tag> handler"
+  exit -1
+fi
+
+####  tag_toolchain  #####################################################
+if [ $tag_toolchain ]; then
+# ---------------------------------------------------
+tag_correct=
+if [ $tag_toolchain == "248" ]; then
+  tag_correct=true
+  if [ $IS_DEVEL ]; then
+  echo " Toolchain TAG ignored. Use CROSS_COMPILE=$CROSS_COMPILE"
+  else
+  ${config_script} --keep-case --set-str TOOLCHAIN_EXTERNAL_URL "file://\$(TOPDIR)/../toolchain/marvell-tools-248.0.tar.bz2"
+  fi
+fi
+if [ $tag_toolchain == "249" ]; then
+  if [ $IS_DEVEL ]; then
+  echo " Toolchain TAG ignored. Use CROSS_COMPILE=$CROSS_COMPILE"
+  else
+  ${config_script} --keep-case --set-str TOOLCHAIN_EXTERNAL_URL "file://\$(TOPDIR)/../toolchain/marvell-tools-249.0.tar.bz2"
+  fi
+fi
+if [ ! $tag_correct ]; then
+  echo " Incorrect Toolchain TAG <$tag_boot_img>"
+  exit -1
+fi
+# ---------------------------------------------------
+fi ;#[ $tag_toolchain ]
+
+
+####  tag_boot_img  #####################################################
+if [ $tag_boot_img ]; then
+# ---------------------------------------------------
+tag_correct=
+if [ ! $tag_correct ]; then
+  echo " Incorrect Boot-image TAG <$tag_boot_img>"
+  exit -1
+fi
+# ---------------------------------------------------
+fi ;#[ $tag_boot_img ]
+
+
+####  tag_dpdk  #####################################################
+if [ $tag_dpdk ]; then
+# ---------------------------------------------------
+tag_correct=
+
+if [ $tag_dpdk == "23.11" ]; then
+  tag_correct=true
+  if [ $is_octeontx ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CONFIG "arm64_thunderxt83_linux_gcc"
+  fi
+  if [ $is_octeontx2 ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CONFIG "arm64_cn9k_linux_gcc"
+  fi
+  if [ $IS_DEVEL ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION "dpdk-23.11-devel"
+  else
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE_LOCATION "file://\$(TOPDIR)/../base-sources-\$(DPDK_RELEASE)/dpdk/sources-dpdk-23.11-\$(DPDK_RELEASE).tar.bz2"
+  fi
+  ${config_script} --enable BR2_PACKAGE_LIBIPSEC_MB
+  ${config_script} --keep-case --set-str BR2_TARGET_ROOTFS_EXT2_SIZE "4G"
+fi
+
+if [ $tag_dpdk == "24.11" ]; then
+  tag_correct=true
+  if [ $is_octeontx ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CONFIG "arm64_thunderxt83_linux_gcc"
+  fi
+  if [ $is_octeontx2 ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CONFIG "arm64_cn9k_linux_gcc"
+  fi
+  if [ $IS_DEVEL ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION "dpdk-24.11-devel"
+  else
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE_LOCATION "file://\$(TOPDIR)/../base-sources-\$(DPDK_RELEASE)/dpdk/sources-dpdk-24.11-\$(DPDK_RELEASE).tar.bz2"
+  fi
+  ${config_script} --enable BR2_PACKAGE_LIBIPSEC_MB
+  ${config_script} --keep-case --set-str BR2_PACKAGE_LIBIPSEC_MB_VERSION "SECLIB-IPSEC-2024.07.08"
+fi
+
+if [ $tag_dpdk == "25.11" ]; then
+  tag_correct=true
+  if [ $is_octeontx ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CONFIG "arm64_thunderxt83_linux_gcc"
+  fi
+  if [ $is_octeontx2 ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CONFIG "arm64_cn9k_linux_gcc"
+  fi
+  if [ $IS_DEVEL ]; then
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION "dpdk-25.11-devel"
+  else
+  ${config_script} --keep-case --set-str BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE_LOCATION "file://\$(TOPDIR)/../base-sources-\$(DPDK_RELEASE)/dpdk/sources-dpdk-25.11-\$(DPDK_RELEASE).tar.bz2"
+  fi
+  ${config_script} --enable BR2_PACKAGE_LIBIPSEC_MB
+  ${config_script} --keep-case --set-str BR2_PACKAGE_LIBIPSEC_MB_VERSION "SECLIB-IPSEC-2024.07.08"
+fi
+
+
+if [ ! $tag_correct ]; then
+  echo " Incorrect DPDK Tag <$tag_dpdk>"
+  exit -1
+fi
+# ---------------------------------------------------
+fi ;#[ $tag_dpdk ]
+
+
+####  tag_kernel #####################################################
+if [ $tag_kernel ]; then
+# ---------------------------------------------------
+tag_correct=
+if [ $tag_kernel == "6.1" ]; then
+  tag_correct=true
+  if [ $IS_DEVEL ]; then
+    ${config_script} --keep-case --set-str BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION "linux-6.1.x-devel"
+  else
+    ${config_script} --keep-case --set-str BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION "file://\$(TOPDIR)/../base-sources-\$(BR2_MARVELL_RELEASE_ID)/linux/sources-linux-6.1.x-\$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+  fi
+  ${config_script} --enable BR2_LINUX_KERNEL_VERSION_6_X
+  ${config_script} --enable BR2_PACKAGE_LIBGPIOD
+fi
+
+if [ $tag_kernel == "6.6" ]; then
+  tag_correct=true
+  if [ $IS_DEVEL ]; then
+    ${config_script} --keep-case --set-str BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION "linux-6.6.x-devel"
+  else
+    ${config_script} --keep-case --set-str BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION "file://\$(TOPDIR)/../base-sources-\$(BR2_MARVELL_RELEASE_ID)/linux/sources-linux-6.6.x-\$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+  fi
+  ${config_script} --enable BR2_LINUX_KERNEL_VERSION_6_X
+  ${config_script} --enable BR2_PACKAGE_LIBGPIOD
+  ${config_script} --enable BR2_PACKAGE_LIBTRACEEVENT
+fi
+
+if [ $tag_kernel == "6.12" ]; then
+  tag_correct=true
+  if [ $IS_DEVEL ]; then
+    ${config_script} --keep-case --set-str BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION "linux-6.12.x-devel"
+  else
+    ${config_script} --keep-case --set-str BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION "file://\$(TOPDIR)/../base-sources-\$(BR2_MARVELL_RELEASE_ID)/linux/sources-linux-6.12.x-\$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+  fi
+  ${config_script} --enable BR2_LINUX_KERNEL_VERSION_6_X
+  ${config_script} --enable BR2_PACKAGE_LIBGPIOD
+  ${config_script} --enable BR2_PACKAGE_LIBTRACEEVENT
+fi
+
+
+if [ ! $tag_correct ]; then
+  echo " Incorrect Kernel Tag <$tag_kernel>"
+  exit -1
+fi
+# ---------------------------------------------------
+fi ;#[ $tag_kernel ]
+
+
+####  tag_buildroot  #####################################################
+if [ $tag_buildroot ]; then
+  # tag_buildroot = TAGbldr values
+  ${br2_sdk_dir}/scripts/ci/tag_buildroot.sh $tag_buildroot
+  if [ $? != 0 ]; then
+    echo ""; exit 1
+  fi
+fi

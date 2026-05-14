@@ -1,0 +1,63 @@
+From 4dcd52e833bd654c571f452d37950c7f69b4c847 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date: Tue, 4 Dec 2018 14:49:53 +0100
+Subject: [PATCH] Makefile: disable checks
+
+This causes the build to fail with the Cavium U-Boot code:
+
+  CFGCHK  u-boot.cfg
+Error: You must add new CONFIG options using Kconfig
+The following new ad-hoc CONFIG options were detected:
+CONFIG_BDK_FDT_SIZE
+CONFIG_CMD_ENV
+CONFIG_COREID_MASK
+CONFIG_MAX_BGX
+CONFIG_MAX_BGX_PER_NODE
+CONFIG_OCTEON_MMC
+CONFIG_RANDOM_MACADDR
+CONFIG_SLT
+CONFIG_SPECIAL_SYNC_HANDLER
+CONFIG_SPI_ENV
+CONFIG_SYS_BLOCK_SHIFT
+CONFIG_SYS_EARLY_PCI_INIT
+CONFIG_SYS_I2C_THUNDERX_SLAVE_ADDR
+CONFIG_SYS_MMC_SET_DEV
+CONFIG_SYS_NO_FLASH
+CONFIG_SYS_NVME_MAX_DEVICE
+CONFIG_SYS_SPD_ADDR_LIST
+CONFIG_SYS_SPD_I2C_BUS
+CONFIG_SYS_TCR_EL1_IPS_BITS
+CONFIG_SYS_TCR_EL2_IPS_BITS
+CONFIG_SYS_TCR_EL3_IPS_BITS
+CONFIG_SYS_VSNPRINTF
+CONFIG_TARGET_THUNDERX_81XX
+CONFIG_THUNDERX_BGX
+CONFIG_THUNDERX_PROMPT_SIZE
+CONFIG_THUNDERX_SMI
+CONFIG_THUNDERX_VNIC
+CONFIG_THUNDERX_XCV
+
+Please add these via Kconfig instead. Find a suitable Kconfig
+file and add a 'config' or 'menuconfig' option.
+make: *** [Makefile:868: all] Error 1
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+---
+ Makefile | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 92d2082938..328da5262b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -866,7 +866,6 @@ endif
+ 	@# Check that this build does not use CONFIG options that we do not
+ 	@# know about unless they are in Kconfig. All the existing CONFIG
+ 	@# options are whitelisted, so new ones should not be added.
+-	$(call cmd,cfgcheck,u-boot.cfg)
+ 
+ PHONY += dtbs
+ dtbs: dts/dt.dtb
+-- 
+2.19.2
+

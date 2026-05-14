@@ -1,0 +1,24 @@
+From: Yan Markman <ymarkman@marvell.com>
+Date: Tue, 30 July 2019 14:49:53 +0200
+Subject: [PATCH] dhcpcd: dhcpcd.conf with allowinterfaces none
+
+When DHCP-Client service is enabled, it up all existing interfaces
+and try to connect to DHCP-Server over them.
+
+This patch adds "allowinterfaces LIST" into dhcpcd.conf file to
+allow only listed interfaces or even none.
+
+Signed-off-by: Yan Markman <ymarkman@marvell.com>
+
+--- a/src/dhcpcd.conf	2018-04-06 03:28:57.000000000 -0700
++++ b/src/dhcpcd.conf	2019-07-31 04:23:45.135625958 -0700
+@@ -39,3 +39,9 @@
+ #slaac hwaddr
+ # OR generate Stable Private IPv6 Addresses based from the DUID
+ slaac private
++
++# Marvell:
++#   UP (and connect to DHCP-Server) only interfaces allowed in arg/list.
++#   "none" may be used to keep all interfaces disabled.
++# allowinterfaces abc,xyz
++allowinterfaces none

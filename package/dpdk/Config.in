@@ -1,0 +1,176 @@
+config BR2_PACKAGE_DPDK_ARCH_SUPPORTS
+	bool
+	depends on BR2_TOOLCHAIN_HAS_SYNC_1 && \
+		BR2_TOOLCHAIN_HAS_SYNC_2 && \
+		BR2_TOOLCHAIN_HAS_SYNC_4 && \
+		BR2_TOOLCHAIN_HAS_SYNC_8
+	default y if (BR2_i386 && !BR2_x86_i386 && !BR2_x86_i486 \
+			&& !BR2_x86_i586 && !BR2_x86_x1000)
+	default y if BR2_x86_64
+	default y if BR2_ARM_CPU_ARMV7A
+	default y if BR2_aarch64 || BR2_aarch64_be
+
+comment "dpdk needs a glibc toolchain and a Linux Kernel to be built"
+	depends on BR2_PACKAGE_DPDK_ARCH_SUPPORTS
+	depends on !BR2_TOOLCHAIN_USES_GLIBC || !BR2_LINUX_KERNEL
+
+config BR2_PACKAGE_DPDK
+	bool "dpdk"
+	depends on BR2_PACKAGE_DPDK_ARCH_SUPPORTS
+	depends on BR2_TOOLCHAIN_USES_GLIBC
+	depends on BR2_LINUX_KERNEL
+	select BR2_LINUX_NEEDS_MODULES
+	select BR2_PACKAGE_PYTHON_PYELFTOOLS
+	help
+	  DPDK is a set of libraries and drivers for fast packet
+	  processing. It was designed to run on any processors,
+	  however, Intel x86 has been the first CPU to be
+	  supported. Ports for other CPUs like IBM Power 8 and ARM are
+	  under progress. It runs mostly in Linux userland. A FreeBSD
+	  port is now available for a subset of DPDK features.
+
+	  Notes:
+	  * To build the included Linux Kernel drivers, it is
+	    necessary to enable CONFIG_PCI_MSI, CONFIG_UIO.
+	  * To build the PCAP PMD properly, you need to enable the
+	    libpcap manually.
+	  * You may need to install the python2 interpreter if you
+	    want to use scripts dpdk_nic_bind.py and cpu_layout.py
+
+	  http://www.dpdk.org/
+
+if BR2_PACKAGE_DPDK
+
+choice
+	prompt "DPDK Version"
+	help
+	  Select the specific DPDK version you want to use
+
+config BR2_PACKAGE_DPDK_LATEST_VERSION
+	bool "18.11"
+
+config BR2_PACKAGE_DPDK_CUSTOM_GIT
+	bool "Custom Git repository"
+
+config BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE
+	bool "Custom archive"
+	help
+	  This option allows to specify a URL pointing to a dpdk
+	  source archive. This URL can use any protocol recognized by
+	  Buildroot, like http://, ftp://, file:// or scp://.
+
+	  When pointing to a local archive using file://, you may want
+	  to use a make variable like $(TOPDIR) to reference the root of
+	  the Buildroot tree.
+
+endchoice
+
+if BR2_PACKAGE_DPDK_CUSTOM_GIT
+
+config BR2_PACKAGE_DPDK_CUSTOM_REPO_URL
+	string "Custom repository URL"
+
+config BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by Git, e.g a
+	  SHA1 id or a tag.
+
+endif # BR2_PACKAGE_DPDK_CUSTOM_GIT
+
+if BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE
+
+config BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE_LOCATION
+	string "URL of custom dpdk archive"
+	depends on BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE
+
+endif
+
+config BR2_PACKAGE_DPDK_VERSION
+	string
+	default "18.11" if BR2_PACKAGE_DPDK_LATEST_VERSION
+	default BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION if BR2_PACKAGE_DPDK_CUSTOM_GIT
+
+config BR2_PACKAGE_DPDK_PLATFORM_OCTEONTX2
+	bool "OcteonTX2"
+	help
+	  For OcteonTX2 SoC family.
+
+config BR2_PACKAGE_DPDK_PLATFORM_OCTEONTX
+	bool "Octeon TX1"
+	help
+	  Octeon TX1 SoC family.
+
+config BR2_PACKAGE_DPDK_PLATFORM_CN10K
+	bool "cn10k"
+	help
+	  For Cn10k SoCs
+
+config BR2_PACKAGE_DPDK_PLATFORM_CN20K
+        bool "cn20k"
+        help
+          For Cn20k SoCs
+
+config BR2_PACKAGE_DPDK_NO_LIBPCAP
+	bool "pcap-lib do not use"
+	help
+	  Force don't use pcap library
+
+config BR2_PACKAGE_DPDK_CONFIG
+	string "Configuration"
+	default "arm64_armada_linux_gcc" \
+		if BR2_PACKAGE_MUSDK_MARVELL
+	default "arm64_cn9k_linux_gcc" \
+		if BR2_PACKAGE_DPDK_PLATFORM_OCTEONTX2
+	default "arm64_thunderxt83_linux_gcc" \
+		if BR2_PACKAGE_DPDK_PLATFORM_OCTEONTX
+	default "arm64_cn10k_linux_gcc" \
+		if BR2_PACKAGE_DPDK_PLATFORM_CN10K
+	default "arm64_cn20k_linux_gcc" \
+                if BR2_PACKAGE_DPDK_PLATFORM_CN20K
+	default "i686-native-linuxapp-gcc" \
+		if BR2_x86_i686
+	default "x86_64-native-linuxapp-gcc" \
+		if BR2_x86_64
+	default "arm-armv7a-linuxapp-gcc" \
+		if BR2_ARM_CPU_ARMV7A
+	default "arm64-armv8a-linuxapp-gcc" \
+		if BR2_aarch64 || BR2_aarch64_be
+
+config BR2_PACKAGE_DPDK_SHARED_LIB
+	bool "Enable DPDK shared library"
+	default n
+	help
+	  Compile DPDK as shared library so other packages can link to it;
+	  e.g. ODP over DPDK combination.
+
+config BR2_PACKAGE_DPDK_ENABLE_FPIC
+	bool
+	default n
+	prompt "Enable -fPIC for dpdk static library"
+	help
+	  "Pass CPU_CFLAGS=-fPIC in dpdk make command"
+
+config BR2_PACKAGE_DPDK_REDUCED_FOOTPRINT
+	bool
+	default n
+	prompt "Use smaller applications and examples set"
+	help
+	  "Use smaller applications and examples set on target file system"
+
+config BR2_PACKAGE_DPDK_WITHOUT_EXAMPLES
+        bool
+        default n
+        prompt "Dont Copy examples to rootfs"
+        help
+          "Dont copy examples to target file system"
+
+
+config BR2_PACKAGE_DPDK_DEBUG_BUILD
+	bool
+	default n
+	prompt "Generate DPDK for debugging."
+	help
+	  "Useful for source-level debugging of DPDK (with gdb)."
+
+endif # BR2_PACKAGE_DPDK

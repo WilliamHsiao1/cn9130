@@ -1,0 +1,16 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_pkg_mainline_0>
+#
+if [ $f_pkg_mainline_0_include ]; then
+
+frag_txt_cr '#--- Mainline packages ---
+BR2_PACKAGE_BUSYBOX_CONFIG="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/busybox.config"
+BR2_PACKAGE_BUSYBOX_SHOW_OTHERS=y
+BR2_PACKAGE_BUSYBOX_WATCHDOG=y
+' ##
+
+fi #f_pkg_mainline_0_include

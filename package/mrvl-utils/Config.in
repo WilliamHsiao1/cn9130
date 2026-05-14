@@ -1,0 +1,56 @@
+config BR2_PACKAGE_MRVL_UTILS
+	bool "mrvl-utils"
+	help
+	  A collection of utilities created by Marvell
+
+if BR2_PACKAGE_MRVL_UTILS
+
+choice
+	prompt "mrvl-utils-version"
+    default BR2_PACKAGE_MRVL_UTILS_RELEASE
+
+config BR2_PACKAGE_MRVL_UTILS_CUSTOM_GIT
+    bool "Custom Git repository"
+    help
+      Allows to specify custom repository for the component
+      Useful for developers building out of bleeding edge sources
+
+config BR2_PACKAGE_MRVL_UTILS_GIT
+    bool "Obtain package from the development GIT"
+
+config BR2_PACKAGE_MRVL_UTILS_CUSTOM_TARBALL
+    bool "Release sources supplied as archives"
+    help
+      Use the package sources from local archive
+
+config BR2_PACKAGE_MRVL_UTILS_RELEASE
+    bool "Release archives"
+    help
+      Use the package sources specified in this SDK release
+
+endchoice
+
+if BR2_PACKAGE_MRVL_UTILS_CUSTOM_GIT
+
+config BR2_PACKAGE_MRVL_UTILS_CUSTOM_REPO_URL
+    string "URL of custom repository"
+
+config BR2_PACKAGE_MRVL_UTILS_CUSTOM_REPO_VERSION
+    string "Custom repository version"
+    help
+      Revision to use in the typical format used by Git
+      E.G. a sha id, a tag, branch, ..
+
+endif
+
+config BR2_PACKAGE_MRVL_UTILS_CUSTOM_TARBALL_LOCATION
+    string "Name of local archive file with release"
+
+config BR2_PACKAGE_MRVL_UTILS_VERSION
+    string
+    default "mrvl-utils-devel" if BR2_PACKAGE_MRVL_UTILS_GIT
+    default BR2_MARVELL_RELEASE_ID if BR2_PACKAGE_MRVL_UTILS_CUSTOM_TARBALL
+    default BR2_MARVELL_RELEASE_ID if BR2_PACKAGE_MRVL_UTILS_RELEASE
+    default BR2_PACKAGE_MRVL_UTILS_CUSTOM_REPO_VERSION if BR2_PACKAGE_MRVL_UTILS_CUSTOM_GIT
+
+endif

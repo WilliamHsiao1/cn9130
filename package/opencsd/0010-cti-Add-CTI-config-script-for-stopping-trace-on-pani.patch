@@ -1,0 +1,76 @@
+From 1262677330c53940bff93a38b2166b886f92b9e4 Mon Sep 17 00:00:00 2001
+From: Linu Cherian <lcherian@marvell.com>
+Date: Tue, 30 May 2023 12:01:10 +0530
+Subject: [PATCH] cti: Add CTI config script for stopping trace on panic
+
+Add script to configure all CTI blocks.
+
+Signed-off-by: Linu Cherian <lcherian@marvell.com>
+---
+ coresight-cti-config.sh | 54 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+ create mode 100755 coresight-cti-config.sh
+
+diff --git a/coresight-cti-config.sh b/coresight-cti-config.sh
+new file mode 100755
+index 0000000..3b4ec4c
+--- /dev/null
++++ b/coresight-cti-config.sh
+@@ -0,0 +1,54 @@
++cd /sys/bus/coresight/devices/
++
++ap_cti_config () {
++
++echo 0 4 > channels/trigin_attach
++
++}
++
++etf_cti_config () {
++
++echo 0 1 > channels/trigout_attach
++echo 1 > channels/trig_filter_enable
++
++}
++
++etr_cti_config () {
++
++echo 0 1 > channels/trigout_attach
++echo 1 > channels/trig_filter_enable
++
++}
++
++
++ctidevs=`find . -name "cti*"`
++
++for i in $ctidevs
++do
++	cd $i
++
++	connection=`find . -name "ete*"`
++	if [ ! -z "$connection" ]
++	then
++		echo "AP CTI config for $i"
++		ap_cti_config
++	fi
++
++	connection=`find . -name "tmc_etf*"`
++	if [ ! -z "$connection" ]
++	then
++		echo "ETF CTI config for $i"
++		etf_cti_config
++	fi
++
++
++	connection=`find . -name "tmc_etr*"`
++	if [ ! -z "$connection" ]
++	then
++		echo "ETR CTI config for $i"
++		etr_cti_config
++	fi
++
++	cd ..
++done
++
+-- 
+2.31.1
+

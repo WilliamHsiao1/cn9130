@@ -1,0 +1,79 @@
+From 6c860805be3ab33a84511b4304b51b84c9b0b56a Mon Sep 17 00:00:00 2001
+From: Mukul Khilnani <mkhilnani@marvell.com>
+Date: Tue, 1 Apr 2025 23:03:59 +0000
+Subject: [PATCH] Rename-dpdk-config-parameters-with-Arm-GCC-14
+
+Signed-off-by: Mukul Khilnani <mkhilnani@marvell.com>
+Change-Id: Ie6cc17d7dcbec2547ad874b73080b399b421b1df
+---
+ config/arm/arm64_cn10k_linux_gcc | 12 ++++++------
+ config/arm/arm64_cn20k_linux_gcc | 12 ++++++------
+ config/arm/arm64_cn9k_linux_gcc  | 12 ++++++------
+ 3 files changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/config/arm/arm64_cn10k_linux_gcc b/config/arm/arm64_cn10k_linux_gcc
+index 1a5f59d45b..a62a7ca15a 100644
+--- a/config/arm/arm64_cn10k_linux_gcc
++++ b/config/arm/arm64_cn10k_linux_gcc
+@@ -1,10 +1,10 @@
+ [binaries]
+-c = ['ccache', 'aarch64-marvell-linux-gnu-gcc']
+-cpp = ['ccache', 'aarch64-marvell-linux-gnu-g++']
+-ar = 'aarch64-marvell-linux-gnu-gcc-ar'
+-strip = 'aarch64-marvell-linux-gnu-strip'
+-pkgconfig = 'aarch64-linux-gnu-pkg-config'
+-pkg-config = 'aarch64-linux-gnu-pkg-config'
++c = ['ccache', 'aarch64-none-linux-gnu-gcc']
++cpp = ['ccache', 'aarch64-none-linux-gnu-g++']
++ar = 'aarch64-none-linux-gnu-gcc-ar'
++strip = 'aarch64-none-linux-gnu-strip'
++pkgconfig = 'pkg-config'
++pkg-config = 'pkg-config'
+ pcap-config = ''
+ cmake = 'cmake'
+ 
+diff --git a/config/arm/arm64_cn20k_linux_gcc b/config/arm/arm64_cn20k_linux_gcc
+index ddb18ebbc8..02d36b0367 100644
+--- a/config/arm/arm64_cn20k_linux_gcc
++++ b/config/arm/arm64_cn20k_linux_gcc
+@@ -1,10 +1,10 @@
+ [binaries]
+-c = ['ccache', 'aarch64-marvell-linux-gnu-gcc']
+-cpp = ['ccache', 'aarch64-marvell-linux-gnu-g++']
+-ar = 'aarch64-marvell-linux-gnu-gcc-ar'
+-strip = 'aarch64-marvell-linux-gnu-strip'
+-pkgconfig = 'aarch64-linux-gnu-pkg-config'
+-pkg-config = 'aarch64-linux-gnu-pkg-config'
++c = ['ccache', 'aarch64-none-linux-gnu-gcc']
++cpp = ['ccache', 'aarch64-none-linux-gnu-g++']
++ar = 'aarch64-none-linux-gnu-gcc-ar'
++strip = 'aarch64-none-linux-gnu-strip'
++pkgconfig = 'pkg-config'
++pkg-config = 'pkg-config'
+ pcap-config = ''
+ cmake = 'cmake'
+ 
+diff --git a/config/arm/arm64_cn9k_linux_gcc b/config/arm/arm64_cn9k_linux_gcc
+index 105ad1d695..1c6189dc87 100644
+--- a/config/arm/arm64_cn9k_linux_gcc
++++ b/config/arm/arm64_cn9k_linux_gcc
+@@ -1,10 +1,10 @@
+ [binaries]
+-c = ['ccache', 'aarch64-marvell-linux-gnu-gcc']
+-cpp = ['ccache', 'aarch64-marvell-linux-gnu-g++']
+-ar = 'aarch64-marvell-linux-gnu-gcc-ar'
+-strip = 'aarch64-marvell-linux-gnu-strip'
+-pkgconfig = 'aarch64-linux-gnu-pkg-config'
+-pkg-config = 'aarch64-linux-gnu-pkg-config'
++c = ['ccache', 'aarch64-none-linux-gnu-gcc']
++cpp = ['ccache', 'aarch64-none-linux-gnu-g++']
++ar = 'aarch64-none-linux-gnu-gcc-ar'
++strip = 'aarch64-none-linux-gnu-strip'
++pkgconfig = 'pkg-config'
++pkg-config = 'pkg-config'
+ pcap-config = ''
+ cmake = 'cmake'
+ 
+-- 
+2.25.1
+

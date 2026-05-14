@@ -1,0 +1,130 @@
+.. _building_development_images:
+
+Building Development Images
+===========================
+
+Marvell SDK can be built from different source types:
+
+ - build from bzip2 tarball archived sources - this mode is called **release**
+
+ - build from GIT sources                    - called **devel**-mode
+
+The **devel** mode is described here.  For **release** mode refer
+to :ref:`building_release_images`. This also describes
+Buildroot dependencies, installation, and building from a release.
+
+This document is primarily for internal Marvell use, but can be useful
+for seeing how this can be incorporated into a customer's source code
+repositories.
+
+It is recommended to become familiar with the
+`Buildroot user manual <https://buildroot.org/downloads/manual/manual.html>`_
+and :ref:`buildroot_base_knowledge` before
+proceeding further, as there are some advanced concepts below.
+
+Git-Clone/Fetch all Marvell and Buildroot components by Manifest
+----------------------------------------------------------------
+Marvell developers can use an integrative git "repo" to fetch all git trees
+required to use Buildroot environment and Marvell-developed package sources like::
+
+	$ mkdir ~/devel
+	$ cd ~/devel
+	$ repo init -u https://github.com/Marvell-Lab/manifest.git -b manifest-devel
+	$ repo sync -j6
+	$ cd distributions/buildroot/sdk-base
+
+The git properties and folder-tree are defined in the **./.repo/manifests/default.xml** file.
+A folder-tree related to the Buildroot is::
+
+ 	 Buildroot environment
+ 	   distributions/buildroot/buildroot
+ 	   distributions/buildroot/sdk-base
+ 	   distributions/buildroot/sdk-ext-*
+ 	 Code-sources
+ 	   kernel/linux*   (Linux-4.14, 4.18, 4.4)
+ 	   boot/*          (atf, sdk, uboot, uefi,...)
+ 	   dataplane/*     (dpdk,...)
+
+Building in -devel mode 
+-----------------------
+
+The Buildroot external packages folder (buildroot/) includes configuration files for both
+release (RELEASE) and development (DEVEL) mode builds. The difference between
+these two configurations is the source packages locations.
+While "release" package sources are supplied in file archives, the "developer"
+packages are taken directly from GIT repositories.
+
+To compile in developer-mode simply do not use the "-r" option on the compile.sh
+command line. For example::
+
+	$ cd distributions/buildroot/sdk-base
+	$ ./scripts/ci/compile.sh cn96xx
+
+The developer mode configuration includes Marvell internal GIT URLs and branch names
+for the packages and should not be modified by Marvell engineers willing to build
+development snapshot images.
+However when used by teams located outside of Marvell internal network, the configuration
+files in **sdk-\*/configs.mv_frag/** should be modified for containing GIT URLs accessible
+from the developers own networks. In such case the default Marvell GIT URLs could be
+used as an example.
+
+Configuration files are handled using a scalable Buildroot mechanism described
+here: :ref:`configuration_and_defconfig_fragments`.  It is recommended to read and
+and understand how these configuration fragments work.
+
+**IMPORTANT** ::
+
+The Buildroot way of handling GIT package sources is as following:
+
+  - Clone the requested package GIT project to "buildroot/dl" folder
+  - Checkout the requested package GIT branch/patch
+  - Create package archive based on checked GIT branch/patch in "buildroot/dl" folder
+  - Extract the package archive from "buildroot/dl" in the "\*output/build" folder
+  - Build the package using the extracted sources.
+
+    - For future builds, Buildroot uses the archive file in "buildroot/dl" folder as package source
+      cache instead of GIT sources.
+    - When the same package is built for another time, the Buildroot uses archive file
+      in "buildroot/dl" folder as package source cache instead of GIT sources.
+    - **Do NOT try to make changes in <buildroot/dl/PKG/git>**, as they would NOT be taken
+      by Buildroot's Extracting phase and also would be lost on GIT-update.
+
+.. Note::
+
+  The above fact should be taken into account when a developer is willing to use
+  latest GIT sources after initial package build. When GIT "version" specified in
+  the configuration file is an actual patch ID, using package archive instead of
+  GIT is perfectly OK and saves download time. However if the GIT "version" is
+  actually the GIT branch name, such behavior might be unwanted.
+  For the last case it is the developer responsibility to clean the Buildroot code
+  cache in the "buildroot/dl" folder before issuing a new package build.
+
+In DEVEL mode, sources are fetched from GIT with "git clone <URL> -b <branch>" command.
+To fit the "Build environment and source directories",
+a directory-name should be given as a third parameter, like in examples below::
+   git clone <URL> -b buildroot-2018.11.x-devel    buildroot
+   git clone <URL> -b sdk-base   sdk-base
+   git clone <URL> -b sdk-exts-abc-devel   sdk-exts-abc
+
+Using CI scripts
+----------------
+It is recommended always to use the :ref:`ci_script` build method due to its simplicity.
+All build output is placed inside a folder named *<platform>-devel-output*, where
+the *<platform>* is one of supported targets.
+
+Developers willing to use local modified package sources instead of GIT-located
+ones, could use the method recommended in the chapter
+"Using Buildroot during development" in the
+`Buildroot Advanced Usage section <https://buildroot.org/downloads/manual/manual.html#_advanced_usage>`_.
+
+Updating GIT trees
+------------------
+Sometimes it is necessary to update a git tree and rebuild. This is not done automatically
+if the git source is modified. Keep the <buildroot/dl/> and <\*output/build/>
+and remove only specific <PKG>::
+
+	$ rm -rf buildroot/dl/<PKG>
+	$ rm -rf output/build/<PKG>*
+
+Use :ref:`ci_script` or :ref:`canonical_method` to rebuild.
+

@@ -1,0 +1,28 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_mv_set_spdk>
+
+
+#--- OcteonTXs -----------------------
+#
+
+# Can be enabled in extensions that need SPDK
+frag_txt '#
+BR2_PACKAGE_SPDK=n
+' ##
+
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_SPDK_CUSTOM_GIT=y
+BR2_PACKAGE_SPDK_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-spdk.git"
+BR2_PACKAGE_SPDK_CUSTOM_REPO_VERSION="v21.01.x-devel"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_SPDK_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_SPDK_CUSTOM_ARCHIVE_LOCATION="$(TOPDIR)/../base-sources-$(SPDK_RELEASE)/spdk/sources-spdk-$(SPDK_RELEASE).tar.bz2"
+' ##
+fi

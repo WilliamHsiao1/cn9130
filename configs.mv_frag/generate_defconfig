@@ -1,0 +1,218 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# <generate_defconfig> generates full defconfig from <f_*> and <frag_list>
+# according to the given defconfig-name with key-words devel/release and
+# aramada/armada3k/octeontx/octeontx2/custom (selecting SocPlatform and/or Board)
+#
+# Done by evaluating of "source <f_*>" fragments with
+#  "if" conditions on aramada/armada3k/octeontx/octeontx2/custom/devel/release.
+#
+# For more information about fragments refer <frag_list> file.
+#
+# Extends and uses $PATH to find source <f_*> files.
+# The basic dir-tree is:
+#    sdk-base/
+#       ./scripts/ci/compile.sh               - main caller
+#       ./configs.mv_frag/generate_defconfig  - _defconfig list-&-generator
+#       ./configs.mv_frag/frag_list           - list of involved fragments
+#       ./configs.mv_frag/f_<frag-name>       - smart fragments
+#       ./configs                             - output for defconfig
+#    sdk-ext/
+#       ./scripts/ci/compile.sh            - Wrap/Caller for main compile.sh
+#       ./configs.mv_frag/frag_list        - Overwriting list (only if needed)
+#       ./configs.mv_frag/f_<frag-name>    - Overwriting frag (only if needed)
+#       ./configs                          - output for solution-defconfig
+#
+function usage {
+	echo """
+<generate_defconfig>  requires 1 or 2 parameters:
+  PARAMETER-1(mandatory): defconfig-file-name having key-words  devel/release
+                                     aramada/armada3k/octeontx/octeontx2/custom
+  PARAMETER-2(optional): "dir1:dir2:dirN"  (for sdk-extensions) frag-directories
+                                           overwriting the original fragments
+  PARAMETER-2(optional): $flavor passed from caller as "export flavor"
+Example:
+  generate_defconfig  octeontx2_devel_myName
+"""
+}
+
+mv_frag_dir=${mv_frag:-"configs.mv_frag"}
+
+defconfig_file=$1
+defconfig_name=${1##*/}
+defconfig_path=`dirname "$1"`
+
+work_frag_path=${PWD}/${mv_frag_dir}
+base_frag_path="$( cd "$( dirname "$0" )" >/dev/null && pwd )"
+
+[ ! $MAINLINE_SET_NUMBER ] && declare -x -i MAINLINE_SET_NUMBER=2
+f_pkg_mainline_0_include=
+f_pkg_mainline_1_include=
+f_pkg_mainline_2_include=
+f_pkg_mainline_3_include=
+f_pkg_mainline_4_include=
+
+case "$MAINLINE_SET_NUMBER" in
+  0 )   f_pkg_mainline_0_include=true ;;
+  1 )   f_pkg_mainline_1_include=true ;;
+  2 )   f_pkg_mainline_2_include=true; f_pkg_mainline_1_include=true ;;
+  3 )   f_pkg_mainline_3_include=true; f_pkg_mainline_2_include=true; f_pkg_mainline_1_include=true ;;
+  4 )   f_pkg_mainline_4_include=true; f_pkg_mainline_3_include=true; f_pkg_mainline_2_include=true; f_pkg_mainline_1_include=true ;;
+  host ) f_pkg_mainline_host_include=true ;;
+  * )   echo "Generate-defconfig ERROR: wrong -n<$MAINLINE_SET_NUMBER> selected"; exit 1 ;;
+esac
+
+
+#--- Set PATH to fragments: falvorS and sdk-ext:sdk-base
+flavor_cntr=0
+[[ `find ${work_frag_path}/${flavor} -name "f_*" 2>/dev/null | wc -l` != "0" ]] && flavor_cntr=1
+[[ `find ${base_frag_path}/${flavor} -name "f_*" 2>/dev/null | wc -l` != "0" ]] && flavor_cntr=1
+
+ext_frag_path=
+if [[ ! $2 ]]; then
+    if [[ $flavor ]]; then
+    # BEGIN add flavor first
+    if [[ ${work_frag_path} == ${base_frag_path} ]]; then
+      ext_frag_path=${work_frag_path}/${flavor}
+    else
+      ext_frag_path=${work_frag_path}/${flavor}:${base_frag_path}/${flavor}
+    fi
+    # END add flavor first
+    fi
+    if [[ ${work_frag_path} == ${base_frag_path} ]]; then
+      ext_frag_path=${work_frag_path}
+    else
+      ext_frag_path=${work_frag_path}:${base_frag_path}
+    fi
+fi
+if [[ $2 ]]; then
+  if [[ $flavor ]]; then
+  # BEGIN add flavor first
+  while read -d ':' dir_path;
+  do
+    if [[ ! $ext_frag_path ]]; then
+      ext_frag_path=${dir_path}/${mv_frag_dir}/${flavor}
+    else
+      ext_frag_path=${ext_frag_path}:${dir_path}/${mv_frag_dir}/${flavor}
+    fi
+    [[ `find ${dir_path}/${mv_frag_dir}/${flavor} -name "f_*" 2>/dev/null | wc -l` != "0" ]] && flavor_cntr=1
+  done <<< "$2"
+  [[ `find ${dir_path}/${mv_frag_dir}/${flavor} -name "f_*" 2>/dev/null | wc -l` != "0" ]] && flavor_cntr=1
+  ext_frag_path=${ext_frag_path}:${dir_path}/${mv_frag_dir}/${flavor}
+  # END add flavor first
+  fi
+  while read -d ':' dir_path;
+  do
+    if [[ ! $ext_frag_path ]]; then
+      ext_frag_path=${dir_path}/${mv_frag_dir}
+    else
+      ext_frag_path=${ext_frag_path}:${dir_path}/${mv_frag_dir}
+    fi
+  done <<< "$2"
+  ext_frag_path=${ext_frag_path}:${dir_path}/${mv_frag_dir}
+fi
+
+if [[ $flavor ]] && [[ "${flavor_cntr}" == "0" ]]; then
+  echo "Generate-defconfig ERROR: no fragments found for flavor <${flavor}>"
+  echo "       in path ${ext_frag_path}>"
+  exit 1
+fi
+PATH=${ext_frag_path}:$PATH
+
+
+case $defconfig_name in
+	*cn10* )       is_cn10k=true; ;;
+	*cn20* )       is_cn10k=true; is_cn20k=true; ;;
+	*cnf20* )       is_cn10k=true; is_cn20k=true; ;;
+	*cnf10* )       is_cn10k=true; ;;
+	*octeontx2* )  is_octeontx_any=true; is_octeontx2=true; ;;
+	*octeontx* )   is_octeontx_any=true; is_octeontx=true;  ;;
+	*octx2* )      is_octeontx_any=true; is_octeontx2=true; ;;
+	*octx* )       is_octeontx_any=true; is_octeontx=true;  ;;
+	*otx2* )       is_octeontx_any=true; is_octeontx2=true; ;;
+	*otx* )        is_octeontx_any=true; is_octeontx=true;  ;;
+	*armada3k* )   is_armada_any=true; is_armada3k=true; ;;
+	*armada* )     is_armada_any=true; is_armada=true;   ;;
+	* )    echo "Defconfig Error: platform unspecified"; usage; exit -1; ;;
+esac
+case $defconfig_name in
+	*devel* )    IS_DEVEL="DEVEL";     ;;
+	*release* )  IS_RELEASE="RELEASE"; ;;
+	* )    echo "Defconfig Error: release/devel unspecified"; usage; exit -1; ;;
+esac
+case $defconfig_name in
+	*cache* )  sdk_cache=true;  ;;
+esac
+case $defconfig_name in
+	*custom* )  is_custom_board=true;  ;;
+esac
+
+
+#--- Utilities for "source" ---
+function defconfig_init {
+ mkdir -p $defconfig_path
+ rm -f $defconfig_file
+ rm -f ${defconfig_file}_ERROR
+}
+function frag_txt {
+ echo -n """$1""" >> ${defconfig_file}
+}
+function frag_txt_cr {
+ echo """$1""" >> ${defconfig_file}
+}
+
+
+##########################################################################
+#       BEGIN GENERATE ~ Exec/Evaluate
+##########################################################################
+defconfig_init
+echo "Marvell Auto-generate <${defconfig_name}> from fragments"
+echo " frag-PATH: ${ext_frag_path}"
+echo ""
+frag_txt """#
+# Marvell Auto-generate <${defconfig_name}>
+"""
+
+if [[ $sdk_cache ]]; then
+source	f_host_welcome_id_msg
+source	f_gcc_mcpu
+source	f_gcc_toolchain
+frag_txt_cr ''
+source	f_pkg_mainline_1
+source	f_pkg_mainline_2_bm
+source	f_pkg_mainline_3_ext
+source	f_pkg_mainline_4_qa
+source	f_pkg_mainline_plat
+source	f_mv_patch_dir
+source  f_last_overwrite
+frag_txt_cr ''
+exit 0
+fi
+
+if [[ $MAINLINE_SET_NUMBER == 0 ]]; then
+source	f_host_welcome_id_msg
+source	f_gcc_mcpu
+source	f_gcc_toolchain
+source	f_kernel
+source	f_pkg_mainline_0
+exit 0
+fi
+
+if [[ $MAINLINE_SET_NUMBER == host ]]; then
+source  f_host_welcome_id_msg
+source  f_gcc_mcpu
+source  f_gcc_toolchain
+source  f_kernel
+source  f_pkg_mainline_host
+exit 0
+fi
+
+source frag_list
+
+# Do NOT delete this wrapper-line
+frag_txt_cr ''

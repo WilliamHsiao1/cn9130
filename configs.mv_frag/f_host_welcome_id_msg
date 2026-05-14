@@ -1,0 +1,13 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_host_welcome_id_msg>
+#
+
+frag_txt '#-
+BR2_MARVELL_RELEASE_ID="21.0.0"
+BR2_TARGET_GENERIC_ISSUE="Welcome to Buildroot Marvell"
+BR2_TARGET_GENERIC_HOSTNAME="marvell"
+' ##

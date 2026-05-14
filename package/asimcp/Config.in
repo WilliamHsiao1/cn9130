@@ -1,0 +1,5 @@
+config BR2_PACKAGE_ASIMCP
+	bool "asimcp"
+	help
+	  A asimcp is a program to copy files from guest to host using
+	  asim special hlt $0xf000 instructions.

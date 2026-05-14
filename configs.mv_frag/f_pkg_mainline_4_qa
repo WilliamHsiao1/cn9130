@@ -1,0 +1,21 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_pkg_mainline_4_qa>
+#
+if [ $f_pkg_mainline_4_include ]; then
+
+frag_txt_cr '#--- Mainline packages 4 (custom adds) ---
+BR2_PACKAGE_CUNIT=y
+BR2_PACKAGE_QEMU=y
+BR2_PACKAGE_QEMU_SYSTEM=y
+BR2_PACKAGE_QEMU_LINUX_USER=y
+BR2_PACKAGE_QEMU_FDT=y
+BR2_PACKAGE_ASIMCP=y
+BR2_PACKAGE_RASDAEMON=y
+BR2_PACKAGE_SUDO=y
+' ##
+
+fi #f_pkg_mainline_4_include

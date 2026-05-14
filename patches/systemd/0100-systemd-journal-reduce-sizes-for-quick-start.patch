@@ -1,0 +1,22 @@
+Author: Yan Markman <ymarkman@marvell.com>
+Date:   Wed Sep 4 02:29:58 2019 -0700
+Subject: [PATCH] systemd: journal: reduce sizes for quick startup 
+
+Signed-off-by: Yan Markman <ymarkman@marvell.com>
+
+--- a/src/journal/journald.conf	2019-09-04 11:32:59.778072134 -0700
++++ b/src/journal/journald.conf	2019-09-04 11:34:37.511034578 -0700
+@@ -19,10 +19,10 @@
+ #SyncIntervalSec=5m
+ #RateLimitIntervalSec=30s
+ #RateLimitBurst=10000
+-#SystemMaxUse=
++SystemMaxUse=20M
+ #SystemKeepFree=
+-#SystemMaxFileSize=
+-#SystemMaxFiles=100
++SystemMaxFileSize=256K
++SystemMaxFiles=50
+ #RuntimeMaxUse=
+ #RuntimeKeepFree=
+ #RuntimeMaxFileSize=

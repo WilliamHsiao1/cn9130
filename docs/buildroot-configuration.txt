@@ -1,0 +1,250 @@
+.. _configuration_and_defconfig_fragments:
+
+Configuration and defconfig fragments
+=====================================
+
+Configurations
+--------------
+
+See :ref:`building_release_images` for details on the organization and installation of the
+Marvell Buildroot Environment.  In this document, the bash-variable **MV_BLDR** is used
+to refer to the SDK installation directory (e.g., ~/work).
+
+The Buildroot configuration is in *xxx_defconfig* file under directory::
+
+   $MV_BLDR/sdk-base/configs/
+
+and, optionally::
+
+   $MV_BLDR/sdk-ext-abc/configs/
+
+A wide variety of toolchain/board/platform/CPU/features can be built using the
+various configurations above.  Refer to `Buildroot's Chapter 7. Configuration of other
+components <https://buildroot.org/downloads/manual/manual.html#_configuration_of_other_components>`_
+for details.
+
+Each variant has its own defconfig with its own *full_name_defconfig*.
+Although a difference between them could be quite small (just a few lines)
+they must exist for the canonical Buildroot to work. To make this maintainable
+and scalable, the Marvell Buildroot Environment uses **defconfig fragments**.
+
+.. _defconfig_fragments:
+
+Defconfig fragments
+-------------------
+
+The full defconfig is divided onto several logical sections called *fragments*.
+These fragments cover all required/possible variants for final defconfig assembly.
+
+The fragment-list is defined in **$MV_BLDR/sdk-base/configs.mv_frag/frag_list**:
+
+* **f_host_welcome_id_msg**
+* **f_gcc_mcpu**          - gcc -mcpu type, different across SoC families
+* **f_gcc_toolchain**     - Marvell-toolchain and GLIBC-header definition
+* **f_kernel**            - Linux kernel
+* **f_pkg_mainline_0**    -  set0 of mainline package, empty, reserved for customer's overriding.
+* **f_pkg_mainline_1**    -  set1   basic/minimal rootfs configuration but with Networking.
+* **f_pkg_mainline_2_bm** -  frag2, set(1+2) optimized for Kernel Network Benchmark (BM).
+* **f_pkg_mainline_3_ext** - frag3, set(1+2+3) containing Netfilter, IPSEC, tools...
+  This is the main fragment for adding custom packages
+* **f_pkg_mainline_4_qa** -  frag4, set(1+2+3+4) used for QA (default).
+* **f_pkg_mainline_plat** - Mainline sub-set on a per-platform basis
+* **f_mv_set**            - Marvell Packages set
+* **f_mv_set_dpdk**       - Marvell DPDK
+* **f_mv_set_odp**        - Marvell ODP
+* **f_mv_patch_dir**      - Path to patch-directory/directories
+* **f_mv_set_ext1/2..N**  - Marvell extension for customer-extensions
+
+Boot/ATF/Uboot/BDK boot-image fragments:
+
+* **f_boot_armada**       - for a given platform and board target (Armada)
+* **f_boot_armada3k**     - for a given platform and board target (Armada3k)
+* **f_boot_octeontx2**    - for a given platform and board target (Octeon-TX2/TX1)
+* **f_boot_custom_board** - for a given platform with and CUSTOM board defined
+* **f_last_overwrite**    - last and ultimate overwrite capability
+
+This list is a "superset" - all fragments are always passed for defconfig generating,
+but some of fragments are empty (e.g. placeholders) for extending by an extension. The
+base_sdk (sdk-base) build uses only these fragments.
+
+An extension could use all base_sdk fragments by default, having none of its own,
+or overload any fragment by placing special variant in the extension directory
+**$MV_BLDR/sdk-ext-abc/configs.mv_frag/**.
+
+How fragments work
+------------------
+
+The fragments have no +x execute permission but are called as "source f_xx" and
+therefore are executable scripts doing script functions, including conditional
+statements. The configs.mv_frag/f_* fragments are assembled by the CI script
+**./scripts/ci/compile.sh** into a full *<target_variant>_defconfig* file.
+
+Individual fragments are gathered according to the PATH variable, after it is extended
+with the *<configs.mv_frag>* path, as follows::
+
+	$ PATH+=$MV_BLDR/sdk-ext-abc/configs.mv_frag:$PATH
+	$ PATH+=$MV_BLDR/sdk-base/configs.mv_frag:$PATH
+
+As a result, the first "f_xx" fragment found in the PATH would be processed
+(e.g. replacing the base_sdk default file "f_xx" with extension's file).
+
+The output configuration is produced according to a given "target" name.  The
+generated full *<target_variant>_defconfig* is kept in TWO places:
+
+ - **./configs/.<target_variant>_defconfig**         - used internally by Buildroot
+ - **../<output>/images/<target_variant>_defconfig** - used for canonical make method
+
+The *<target_variant>_defconfig* is also used for creation of an
+auxiliary file *$MV_BLDR/<output>/.build.<target_variant>_defconfig*.
+This file keeps the start and end times of the last compile.sh full build.
+
+To produce a configuration file without starting the build call
+compile.sh with the option **--config_only** or **-c**::
+
+	$ ./scripts/ci/compile.sh <....> --config_only    ;# or
+	$ ./scripts/ci/compile.sh -c
+
+For more information about compile.sh usage, options and component's building
+refer to :ref:`ci_script` and :ref:`building_development_images`.
+
+.. Note::
+
+  To generate full defconfig file, the compile.sh calls the internal script
+  *./configs.mv_frag/generate_defconfig*.
+
+Full Defconfig name (and file) generating/parsing
+-------------------------------------------------
+
+The full defconfig name is generated from the command line arguments passed to compile.sh.
+It consists of the following parts:
+
+  - build-name
+  - extension-name (optional)
+  - SoC-family (marvell_octeontx, marvell_octeontx2, marvell_armada, marvell_armada3k)
+  - release/devel mode
+
+For known Marvell boards and platforms (from ``compile.sh --list``) the SoC-family is known
+and added automatically.
+As an example for a **release** version, using extension **abc** on board **cn96xx** ::
+
+	$ cd $MV_BLDR/sdk-ext-abc
+	$ ./scripts/ci/compile.sh cn96xx -c -r "SDK-10.3.2.0"
+	$ ls -l ./configs/.cn96xx_abc_marvell_octeontx2_release_defconfig
+	$ ls -l ../cn96xx-abc-release-output/images/cn96xx_abc_marvell_octeontx2_release_defconfig
+
+Mainline Community packages
+---------------------------
+
+Mainline community packages are included in the build according to the **f_pkg_mainline_x**
+fragments. It is possible to select a subset of these packages from the
+provided fragment list using the *-n* option to compile.sh. The default is
+sets 1 through 4, but can be easily changed to a smaller set.
+For example, to select sets 1, 2, and 3::
+
+	$ ./scripts/ci/compile.sh cn96xx -n3 -r "SDK-10.3.2.0"
+
+In addition, a customer may have the need to add (or remove) a Mainline well-known
+community BR2_PACKAGE_<ABC>. This can be done by modifying one of the following fragments:
+
+  - over base_sdk/configs.mv_frag/f_pkg_mainline_custom file modification
+  - over extension/.../f_pkg_mainline_custom
+  - over extension/.../f_pkg_mainline_plat - if this is SoC-family specific
+
+The **base_sdk/configs.mv_frag/f_pkg_mainline** is the generic modification
+impacting all builds and therefore should be agreed with base_sdk integrator.
+Otherwise, the preferred option is to modify f_pkg_mainline_custom or
+f_pkg_mainline_plat.
+
+
+Marvell Internal CI tips
+------------------------
+
+Creating a new Extension
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The easy way to create and configure a new extension is the "extensions-template".
+The extension template also provides EXAMPLE_f_* fragment-files for frequently
+fragment-overwriting cases.
+Refer::
+
+- Project: IP/SW/distributions/buildroot/sdk-ext
+- Branch: sdk-ext-template-devel.
+- Directory ./configs.mv_frag/EXAMPLE_nn_f_*
+
+You could use either one of them or their combination for a real extension.
+
+The configs.mv_frag/ should contain **ONLY** defconfig <f_*> fragments which
+are DIFFERENT from the Base-SDK and should be overwritten.
+
+Frequently used extension's fragment-overwriting cases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The EXAMPLE_f\_ files mentioned below are from the "extensions-template".
+
+EXAMPLE_1: Extension with "defconfig" same as in base_sdk
+	   The $SDK_EXT/configs.mv_frag is empty
+
+EXAMPLE_2: Extension with some additional Mainline (user-space) packages
+	   Copy base_sdk/.../f_pkg_mainline_3_ext and edit
+
+EXAMPLE_3: Extension with Linux-Kernel different from base_sdk
+	   For a few lines modification use/edit/rename f_kernel file.
+
+EXAMPLE_4: SNAP/MUSDK... with extended/modified ODP specification
+	   Use/edit EXAMPLE_4__.f_mv_set_odp, rename to f_mv_set_odp
+
+EXAMPLE_5: Extension with additional Marvell's package (e.g. toolkit)
+	   Use/Edit EXAMPLE_5__.f_mv_set_ext1, rename to f_mv_set_ext1
+
+EXAMPLE_6: Extension with additional (extra) paths to PATCH-directories
+	   Use/Edit EXAMPLE_6__.f_mv_patch_dir, rename to f_mv_patch_dir
+
+EXAMPLE_7: Extension for new customer-specific Board-Platform
+	   Use/edit EXAMPLE_7__.f_boot_custom_board, rename it tp f_boot_custom_board
+
+EXAMPLE_8: Extension for boot-image (e.g. f_boot_armada) but with changed components
+	   Use/edit EXAMPLE_8__.f_boot_armada, rename to f_boot_armada
+
+EXAMPLE_9: few lines overwriting in the generated defconfig
+	   Copy base_sdk/.../f_last_overwrite and edit according to the instructions inside
+
+
+Customer Board Buildroot Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+New customer board should be added as an **extension**.
+The *<f_board_custom_board>* fragment should be copied into extension's *configs.mv_frag/*
+directory and adjusted to fit the real board parameters.
+
+Use the f_boot_armada, f_boot_armada3k, f_boot_octeontx2 as a reference for editing.
+Refer below a brief parameters' description.
+
+Depending upon SoC-family used on board the compile.sh should be called with
+one of targets: custom_otx2, custom_otx, custom_armada, custom_armada3k.
+
+Let's suppose the SoC-family is OcteonTX2 (just like on cn96xx)
+and extension is called "extension-board"::
+
+	$ cd $MV_BLDR/sdk-ext-board
+	$ ./scripts/ci/compile.sh custom_otx2 -r "ver1.0"    ;# build everything
+	$ ./scripts/ci/compile.sh custom_otx2 -r "ver1.0" -c ;# config-only
+
+Board Bootloader related packages are:
+
+- arm-trusted-firmware - belongs to base-Mainline
+- uboot                - belongs to base-Mainline
+
+No private-code separation for these packages is supported.
+If some code-modification required for customer-board, it should be integrated
+directly into appropriated package.  The possibility for modification over patches is TBD.
+
+========================================== =====================================================
+**Main Board/Platform parameters**         **Example values**
+------------------------------------------ -----------------------------------------------------
+BR2_TARGET_UBOOT_BOARDNAME                 "octeontx2_96xx"
+BR2_TARGET_UBOOT_BOARD_DEFCONFIG           "t96"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_PLATFORM   "t96"
+BR2_TARGET_MARVELL_BDK_PLATFORM            "t96"
+BR2_TARGET_MARVELL_BDK_ADDITIONAL_DTS      $(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/dts/t96"
+BR2_LINUX_KERNEL_INTREE_DTS_NAME           "marvell/armada-8040-mcbin"
+========================================== =====================================================

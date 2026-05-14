@@ -1,0 +1,117 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_mv_set_dpdk>
+#
+
+#--- ARMADAs -----------------------
+#
+if [[ $is_armada_any ]]; then
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_DPDK=y
+BR2_PACKAGE_DPDK_CUSTOM_GIT=y
+BR2_PACKAGE_DPDK_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-dpdk.git"
+BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION="dpdk-23.11-devel"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_DPDK=y
+BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE_LOCATION="$(TOPDIR)/../base-sources-$(DPDK_RELEASE)/dpdk/sources-dpdk-23.11-$(DPDK_RELEASE).tar.bz2"
+' ##
+fi
+fi
+
+
+#--- OcteonTXs -----------------------
+#
+if [[ $is_octeontx_any ]]; then
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_DPDK=y
+BR2_PACKAGE_DPDK_CUSTOM_GIT=y
+BR2_PACKAGE_DPDK_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-dpdk.git"
+BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION="dpdk-23.11-devel"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_DPDK=y
+BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE_LOCATION="$(TOPDIR)/../base-sources-$(DPDK_RELEASE)/dpdk/sources-dpdk-23.11-$(DPDK_RELEASE).tar.bz2"
+' ##
+fi
+fi
+
+#--- CN10Ks -----------------------
+#
+if [[ $is_cn10k ]]; then
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_DPDK=y
+BR2_PACKAGE_DPDK_CUSTOM_GIT=y
+BR2_PACKAGE_DPDK_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-dpdk.git"
+BR2_PACKAGE_DPDK_CUSTOM_REPO_VERSION="dpdk-23.11-devel"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_DPDK=y
+BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_DPDK_CUSTOM_ARCHIVE_LOCATION="$(TOPDIR)/../base-sources-$(DPDK_RELEASE)/dpdk/sources-dpdk-23.11-$(DPDK_RELEASE).tar.bz2"
+' ##
+fi
+fi
+
+# For generating debug build of DPDK
+#frag_txt '#
+#BR2_PACKAGE_DPDK_DEBUG_BUILD=y
+#' ##
+
+#Enable for all SoCs
+frag_txt '#
+BR2_PACKAGE_LIBIPSEC_MB=y
+BR2_PACKAGE_LIBIPSEC_MB_VERSION="SECLIB-IPSEC-2023.06.20"
+' ##
+
+
+if [[ $is_cn10k ]]; then
+frag_txt '#
+BR2_PACKAGE_DPDK_PLATFORM_CN10K=y
+BR2_PACKAGE_LIBIPSEC_MB=y
+' ##
+fi
+
+if [[ $is_octeontx2 ]]; then
+frag_txt '#
+BR2_PACKAGE_DPDK_PLATFORM_OCTEONTX2=y
+' ##
+fi
+
+if [[ $is_octeontx ]]; then
+frag_txt '#
+BR2_PACKAGE_DPDK_PLATFORM_OCTEONTX=y
+' ##
+fi
+
+if [[ $is_octeontx_any ]]; then
+frag_txt '#
+BR2_PACKAGE_LUA=y
+' ##
+fi
+
+if [[ $is_octeontx2 ]] || [[ $is_cn10k ]];  then
+frag_txt '#
+BR2_PACKAGE_DPDK_CRYPTO=y
+' ##
+fi
+
+######CN20K######
+if [[ $is_cn20k ]]; then
+frag_txt '#
+BR2_PACKAGE_DPDK_PLATFORM_CN20K=y
+BR2_PACKAGE_DPDK_PLATFORM_CN10K=n
+' ##
+fi
+

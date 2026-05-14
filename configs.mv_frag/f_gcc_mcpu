@@ -1,0 +1,21 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_gcc_mcpu>
+#
+
+[[ $is_octeontx  ]] && frag_txt_cr 'BR2_thunderx=y'
+#[[ $is_octeontx2 ]] && frag_txt_cr 'BR2_thunderx=y'
+[[ $is_armada    ]] && frag_txt_cr 'BR2_cortex_a72=y'
+[[ $is_armada3k  ]] && frag_txt_cr 'BR2_cortex_a53=y'
+[[ $is_cn10k  ]] && frag_txt_cr 'BR2_generic=y'
+[[ $is_octeontx2  ]] && frag_txt_cr 'BR2_generic=y'
+
+[[ $is_octeontx  ]] && frag_txt_cr 'BR2_MARVELL_SOC_FAMILY="OCTEONTX"'
+[[ $is_octeontx2 ]] && frag_txt_cr 'BR2_MARVELL_SOC_FAMILY="OCTEONTX2"'
+[[ $is_armada    ]] && frag_txt_cr 'BR2_MARVELL_SOC_FAMILY="ARMADA"'
+[[ $is_armada3k  ]] && frag_txt_cr 'BR2_MARVELL_SOC_FAMILY="ARMADA3K"'
+[[ $is_cn10k  ]] && frag_txt_cr 'BR2_MARVELL_SOC_FAMILY="CN10K"'
+[[ $is_cn20k  ]] && frag_txt_cr 'BR2_MARVELL_SOC_FAMILY="CN20K"'

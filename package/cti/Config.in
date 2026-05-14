@@ -1,0 +1,58 @@
+config BR2_PACKAGE_CTI
+	bool "cti"
+	depends on BR2_PACKAGE_DPDK
+	help
+	  Common transport apps and libraries for pcie endpoints.
+
+if BR2_PACKAGE_CTI
+choice
+	prompt "cti version"
+	help
+	  Select the specific version you want to use
+	default BR2_PACKAGE_CTI_CUSTOM_GIT
+
+config BR2_PACKAGE_CTI_CUSTOM_GIT
+	bool "Custom Git repository"
+	help
+	  Allows to specify custom repository for the component
+	  Useful for developers building out of bleeding edge sources
+
+config BR2_PACKAGE_CTI_CUSTOM_ARCHIVE
+	bool "Custom archive"
+	help
+	  This option allows to specify a URL pointing to a cti
+	  source archive. This URL can use any protocol recognized by
+	  Buildroot, like http://, ftp://, file:// or scp://.
+
+	  When pointing to a local archive using file://, you may want
+	  to use a make variable like $(TOPDIR) to reference the root of
+	  the Buildroot tree.
+
+endchoice
+
+if BR2_PACKAGE_CTI_CUSTOM_GIT
+
+config BR2_PACKAGE_CTI_CUSTOM_REPO_URL
+	string "Custom repository URL"
+
+config BR2_PACKAGE_CTI_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by Git
+	  e.g. a SHA1 id or a tag.
+
+endif
+
+if BR2_PACKAGE_CTI_CUSTOM_ARCHIVE
+
+config BR2_PACKAGE_CTI_CUSTOM_ARCHIVE_LOCATION
+	string "URL of custom cti archive"
+	depends on BR2_PACKAGE_CTI_CUSTOM_ARCHIVE
+
+endif
+
+config BR2_PACKAGE_CTI_VERSION
+	string
+	default BR2_PACKAGE_CTI_CUSTOM_REPO_VERSION if BR2_PACKAGE_CTI_CUSTOM_GIT
+
+endif # BR2_PACKAGE_CTI

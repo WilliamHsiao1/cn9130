@@ -1,0 +1,319 @@
+Build images for secure boot
+============================
+
+This is applicable only to cn81xx, cn83xx and cn96xx builds.
+
+Generic settings
+----------------
+
+1. Enable ``mbedtls`` library.  Secure boot images use the Marvell
+   sources of it.  These sources should be installed in staging
+   directory so that later they are used by ARM Trusted Firmware build.  To do so:
+
+    * Enable ``mbedtls`` package:
+      ``BR2_PACKAGE_MBEDTLS=y``.
+      (Target packages →
+      Libraries →
+      Crypto →
+      mbedtls)
+
+    * Specify that the sources should be fetched from a custom ``git``
+      repo:
+      ``BR2_PACKAGE_MBEDTLS_CUSTOM_GIT=y``.
+      (Target packages →
+      Libraries →
+      Crypto →
+      mbedtls →
+      use custom sources)
+
+    * Specify the reference to the git that contains the sources:
+      ``BR2_PACKAGE_MBEDTLS_CUSTOM_GIT_REPO_URL="https://github.com/Marvell-Lab/base-mbedtls.git"``.
+      (Target packages →
+      Libraries →
+      Crypto →
+      mbedtls →
+      URL of custom repository)
+
+    * Specify the branch that should be used:
+      ``BR2_PACKAGE_MBEDTLS_CUSTOM_GIT_REPO_VERSION="mbedtls-devel"``.
+      (Target packages →
+      Libraries →
+      Crypto →
+      mbedtls →
+      custom repository version)
+
+    * Specify that the sources should be installed in the staging
+      directory:
+      ``BR2_PACKAGE_MBEDTLS_INSTALL_SOURCES_STAGING=y``.
+      (Target packages →
+      Libraries →
+      Crypto →
+      mbedtls →
+      install sources to staging dir)
+
+    * Specify the location of the mbedtls sources for ARM Trusted Firmware.
+      To do so add variable
+      ``MBEDTLS_DIR=$(STAGING_DIR)/usr/share/mbedtls``
+      to the ARM Trusted Firmware build system environment:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_ENVIRONMENT="[..] MBEDTLS_DIR=$(STAGING_DIR)/usr/share/mbedtls"``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build environment)
+
+    * Now ARM Trusted Firmware package depends on mbedtls package.  It should be specified with
+      BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_DEPENDENCIES configuration variable:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_DEPENDENCIES="mbedtls"``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build dependencies)
+
+2. Enable secure boot for BDK package:
+
+    * ``BR2_TARGET_MARVELL_BDK_SECURE_BOOT=y``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot)
+
+    * If firmware should be signed with OpenSSL software HSM then enable ``BR2_TARGET_MARVELL_BDK_OPENSSL``
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing)
+
+3. Specify the keys that will be used to sign the firmware.
+   If "Use OpenSSL engine for signing" is not set then a local key can be used.
+   There exists a key that can be used for testing purposes.
+   It is located in
+   ``$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/trust/rot_key.pem``.
+   To use it, specify:
+
+    * For BDK:
+      ``BR2_TARGET_MARVELL_BDK_ROT_KEY_PATH="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/trust/rot_key.pem"``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Path to Root of Trust key)
+
+    * For ARM Trusted Firmware: add variable ``ROT_KEY=$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/trust/rot_key.pem``
+      to the ARM Trusted Firmware build system:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="[..] ROT_KEY=$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/trust/rot_key.pem"``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build variables)
+
+   If "Use OpenSSL engine for signing" is set then OpenSSL software HSM should be installed.
+   Let's say it is installed into ``$SSL_HSM_INSTALL_DIR``, configuration file for it is located in
+   ``$SOFTHSM2_CONF`` and pkcs11 module to access the engine
+   is located at ``$PKCS11_MODULE_PATH``
+   Then these locations should be specified in the buildroot configuration.
+
+    * For BDK:
+      Set ``BR2_TARGET_MARVELL_BDK_SSL_HSM_INSTALL_PATH`` to ``$SSL_HSM_INSTALL_DIR``,
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      Path to OpenSSL Soft HSM installation directory)
+      ``BR2_TARGET_MARVELL_BDK_SOFTHSM2_CONF_PATH`` to ``$SOFTHSM2_CONF``,
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      Path to SoftHSM2 config)
+      ``BR2_TARGET_MARVELL_BDK_PKCS11_MODULE_PATH`` to ``$PKCS11_MODULE_PATH"``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      Path to pkcs11 module)
+
+    * For ARM Trusted Firmware:
+      add string ``"SSL_HSM_INSTALL_DIR=$SSL_HSM_INSTALL_DIR SOFTHSM2_CONF=$SOFTHSM2_CONF PKCS11_MODULE_PATH=$PKCS11_MODULE_PATH"``
+      to the ARM Trusted Firmware build system environment:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_ENVIRONMENT``
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build environment)
+
+   Then the keys should be specified.  Let's say that the root of trust key, bl31 key,
+   trusted world key, non-truested world key, u-boot key and bdk key are created in the HSM.
+   Specify them:
+
+    * For BDK:
+      Set ``BR2_TARGET_MARVELL_BDK_KEY_ROT`` to the rot key's URL,
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      Root Of Trust key),
+      set ``BR2_TARGET_MARVELL_BDK_KEY_BL31`` to the rot key's URL,
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      BL31 key),
+      set ``BR2_TARGET_MARVELL_BDK_KEY_TW`` to the rot key's URL,
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      Trusted World key),
+      set ``BR2_TARGET_MARVELL_BDK_KEY_ROT_NTW`` to the rot key's URL,
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      Non Trusted World key),
+      set ``BR2_TARGET_MARVELL_BDK_KEY_UBOOT`` to the rot key's URL,
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      Non Trusted Firmware Content Certificate key)
+      and set ``BR2_TARGET_MARVELL_BDK_KEY_BDK`` to the bdk key's URL
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Use OpenSSL engine for signing →
+      BDK key).
+
+    * For ARM Trusted Firmware:
+      add string ``"ROT_KEY=\'...\' BL31_KEY=\'...\' TRUSTED_WORLD_KEY=\'...\' NON_TRUSTED_WORLD_KEY=\'...\' BL33_KEY=\'...\'"``
+      where ellipses stand for corresponding keys' URLs
+      to the ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES`` variable
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build variables)
+
+4. Change the settings for the ARM Trusted Firmware package:
+
+    * Add some required variables to the ARM Trusted Firmware build system:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="[..] TRUSTED_BOARD_BOOT=1 GENERATE_COT=1 ARM_ROTPK_LOCATION=regs"``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build variables)
+
+    * Specify that u-boot that was built by buildtoot should be used
+      as BL33:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_UBOOT_AS_BL33=y``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Use U-Boot as BL33)
+
+    * Specify the name of the u-boot binary that should be used
+      in the resulting FIP:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_UBOOT_IMAGE_NAME="u-boot-nodtb.bin"``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Use U-Boot as BL33 →
+      Specify name of u-boot binary image)
+
+   If "Use OpenSSL engine for signing" is set then
+
+    * Add substring ``OPENSSL_ENGINE=pkcs11 CREATE_KEYS=0`` to
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES``
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build variables)
+
+Setting non-volatile anti-rollback counters
+-------------------------------------------
+
+Let X and Y be the values of the counters for trusted firmware and
+non-trusted firmware respectively.  Specify it for the secure
+boot images:
+
+1. For ARM Trusted Firmware:
+
+    * Add settings ``TFW_NVCTR_VAL=X`` and ``NTFW_NVCTR_VAL=Y``
+      to the list of additional ARM Trusted Firmware build variables:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="[..] TFW_NVCTR_VAL=X NTFW_NVCTR_VAL=Y"``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build variables)
+
+2. For BDK:
+
+    * ``BR2_TARGET_MARVELL_BDK_TFW_NV_COUNT=X``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Trusted non volatile conter)
+
+    * ``BR2_TARGET_MARVELL_BDK_NTFW_NV_COUNT=Y``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Non Trusted non volatile conter)
+
+Creating encrypted firmware image
+---------------------------------
+
+1. For ARM Trusted Firmware:
+
+    * Add settings ``CIPHER_TYPE=aes-128-cbc``
+      to the list of additional ARM Trusted Firmware build variables:
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="[..] CIPHER_TYPE=aes-128-cbc"``.
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Additional ATF build variables)
+
+    * Specify that the cert_create tool should be installed: set
+      ``BR2_TARGET_ARM_TRUSTED_FIRMWARE_INSTALL_CERT_CREATE``
+      (Bootloaders →
+      ARM Trusted Firmware (ATF) →
+      Install cert_create utility)
+
+2. For BDK, using secret symetric key (not to be combined with HUK encryption below):
+
+    * To encrypt image with Secret Symmectric key, set ``BR2_TARGET_MARVELL_BDK_ENCRYPT_SSK``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Firmware image encryption ->
+      Encrypt with Secret Symmectric key)
+
+    * Set the key with ``BR2_TARGET_MARVELL_BDK_SSK_KEY=0123456789abcdef0123456789abcdef``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Secret Symetric Key)
+
+3. Or for BDK, using hardware unique key (not to be combined with SSK encryption above):
+
+    * To encrypt image with Hardware Unique Key, set ``BR2_TARGET_MARVELL_BDK_ENCRYPT_HUK``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Firmware image encryption ->
+      Use Hardware Unique Key)
+
+    * Set the key with ``BR2_TARGET_MARVELL_BDK_HUK_KEY=0123456789abcdef0123456789abcdef``.
+      (External options →
+      Marvell OcteonTX BDK →
+      Secure boot →
+      Hardware Unique Key)
+
+Building Flattened Image Tree (FIT) images
+------------------------------------------
+
+By default a FIT image is created from the sources located
+at ``board/marvell/fit/default``.  This feature can be turned on/off by
+setting the ``BR2_TARGET_MARVELL_BDK_CREATE_FIT_IMAGE``
+(External options →
+Marvell OcteonTX BDK →
+Create FIT image).
+Another location of the sources can be specified by
+``BR2_TARGET_MARVELL_BDK_FIT_DIR``.  The content of the directory
+that is pointed by this configuration variable
+will be copied into ``BINARIES_DIR`` directory and
+buildroot will issue commands to create an ``.itb`` image in ``BINARIES_DIR``.
+
+In order to boot FIT image from u-boot command prompt use "bootm" command instead
+of "booti" used for the regular kernel Image boots.
+
+Example of loading and booting FIT image in U-boot::
+
+	PROMPT> setenv fitload 0x28000000
+	PROMPT> tftpboot $fitload fit-image-dev.itb
+	PROMPT> bootm $fitload#config@1 - $fdtcontroladdr

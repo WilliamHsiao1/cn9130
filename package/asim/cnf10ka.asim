@@ -1,0 +1,78 @@
+#
+ASIM_USE_RPM=1
+ASIM_USE_SPI=1
+ASIM_USE_ML=0
+ASIM_GIC_PWRR=on
+ASIM_USE_CDN_EMMC=1
+@${ASIM}/configs/${ASIM_ALT_CFG}
+
+#
+# Set GPIO strap pins (boot method)
+# 24bit SPI
+#control n0.gpio0 set strap 0x100a
+# eMMC
+#control n0.gpio0 set strap 0x0008
+control n0.gpio0 set strap ${BOOT_STRAP}
+
+#
+## Below configuration is used for secure-boot
+## Note that GPIO_STRAPX[TRUSTED_MODE] (bit 10)
+## at asim-dev/Makefile needs to be set to boot
+## securely on ASIM
+#
+
+#
+# Load Firmware
+#
+# Load SPI image
+control n0.spi0 attach 0 mt25q512 ${SPI_IMAGE}
+control n0.spi0 attach 1 mt25q512 ${SPI_IMAGE}
+control n0.spi1 attach 0 mt25q512 ${SPI1_IMAGE}
+
+# Load eMMC image
+if MMC_IMAGE : control n0.emm0 connect ${MMC_IMAGE}
+
+# Load the EBF symbols
+#symbols ${SYMBOL_IMAGE}
+
+#TAP interfaces for RPM0 LMACs
+control n0.rpm0 lmac 0 ${NIC0}
+control n0.rpm0 lmac 1 ${NIC1}
+control n0.rpm0 lmac 2 ${NIC2}
+control n0.rpm0 lmac 3 ${NIC3}
+
+#TAP interfaces for RPM1 LMACs
+control n0.rpm1 lmac 0 ${NIC4}
+control n0.rpm1 lmac 1 ${NIC5}
+control n0.rpm1 lmac 2 ${NIC6}
+control n0.rpm1 lmac 3 ${NIC7}
+
+#TAP interfaces for RPM2 LMACs
+control n0.rpm2 lmac 0 ${NIC8}
+control n0.rpm2 lmac 1 ${NIC9}
+control n0.rpm2 lmac 2 ${NIC10}
+control n0.rpm2 lmac 3 ${NIC11}
+
+#TAP interfaces for RPM3 LMACs
+control n0.rpm3 lmac 0 ${NIC12}
+control n0.rpm3 lmac 1 ${NIC13}
+control n0.rpm3 lmac 2 ${NIC14}
+control n0.rpm3 lmac 3 ${NIC15}
+
+# Tell the EBF how much memory is available at magic address 1GB
+# First byte is the enable mask for DSS
+# Second byte is the size of each DIMM in GB
+# Third byte is the number of DIMMs per DSS (1 or 2)
+mm1 0x40000000 3 secure
+mm1 0x40000001 $(ASIM_DIMM_SIZE) secure
+mm1 0x40000002 $(ASIM_DIMM_PER_LMC) secure
+
+control n0.uaa0 connect ${UART0PORT}
+control n0.uaa1 connect ${UART1PORT}
+show devices
+show addressmap
+control n0.uaa0 wait
+
+control n0.xcp0 load ${ROM_IMAGE}
+stop mcp
+start scp noap

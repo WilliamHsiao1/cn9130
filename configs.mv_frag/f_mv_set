@@ -1,0 +1,301 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_mv_set>
+#
+
+frag_txt_cr "#--- Marvell packages ---"
+#
+
+#--- Common for all targets ---------------------
+frag_txt '#
+BR2_PACKAGE_TXCSR=y
+BR2_PACKAGE_CPT_MICROCODE=y
+BR2_PACKAGE_MEMUTILS=y
+BR2_PACKAGE_TDM_UTILS=y
+BR2_PACKAGE_LIBTMC=y
+BR2_PACKAGE_GATOR=y
+BR2_PACKAGE_OPTEE=n
+BR2_PACKAGE_OPTEE_GIT=n
+' ##
+
+if [[ $IS_DEVEL ]]; then
+#------IS_DEVEL------------------
+frag_txt '#
+BR2_PACKAGE_TXCSR_GIT=y
+BR2_PACKAGE_CPT_MICROCODE_GIT=y
+BR2_PACKAGE_MEMUTILS_GIT=y
+BR2_PACKAGE_TDM_UTILS_GIT=y
+BR2_PACKAGE_GATOR_GIT=y
+' ##
+fi
+
+#-----------------------#
+#
+
+if [[ $is_cn10k ]] && [[ $IS_CN10K_A0 ]]; then
+frag_txt '#
+BR2_MARVELL_CN10K_A0=y
+' ##
+fi
+
+#
+#--- OCTEONTX targets only ----------------------
+if [[ $is_octeontx_any ]] || [[ $is_cn10k ]] ; then
+frag_txt '#
+# BR2_PACKAGE_CONFIG_CAVIUM_IPFWD_OFFLOAD is not set
+# BR2_PACKAGE_CAVIUM_XDP_IPFWD is not set
+# BR2_PACKAGE_BUILD_TEST is not set
+BR2_PACKAGE_OPENCSD=y
+BR2_PACKAGE_LINUX_FIRMWARE=y
+BR2_PACKAGE_LINUX_FIRMWARE_RTL_815X=y
+' ##
+fi
+if [[ $is_octeontx_any ]] && [[ $IS_DEVEL ]]; then
+frag_txt '#
+# BR2_PACKAGE_CAVIUM_XDP_IPFWD_GIT is not set
+# BR2_PACKAGE_BUILD_TEST_GIT=y
+' ##
+fi
+
+
+if [[ $is_octeontx_any ]]; then
+frag_txt '#
+BR2_PACKAGE_LIBTMC=y
+BR2_PACKAGE_LIBPMT=n
+' ##
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_LIBTMC_GIT=y
+BR2_PACKAGE_LIBPMT_GIT=n
+' ##
+fi
+fi
+
+#Enable CTI package for octeontx2
+if [[ $is_octeontx2 ]] || [[ $is_cn10k ]]; then
+frag_txt '#
+BR2_PACKAGE_CTI=y
+' ##
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_CTI_CUSTOM_GIT=y
+BR2_PACKAGE_CTI_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-cti.git"
+BR2_PACKAGE_CTI_CUSTOM_REPO_VERSION="cti-sdk11-devel"
+' ##
+fi
+if [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_PACKAGE_CTI_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_CTI_CUSTOM_ARCHIVE_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/cti/sources-cti-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+' ##
+fi
+fi
+
+#--- ARMADA targets only ----------------------
+if [[ $is_armada ]] && [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_IS_FW=y
+BR2_PACKAGE_IS_FW_GIT=y
+BR2_PACKAGE_TDM_UTILS_VOICE_TOOL=y
+' ##
+fi
+if [[ $is_armada ]] && [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_PACKAGE_IS_FW=y
+# BR2_PACKAGE_IS_FW_GIT is not set
+BR2_PACKAGE_TDM_UTILS_VOICE_TOOL=y
+' ##
+fi
+
+if [[ $is_armada ]]; then
+frag_txt '#
+BR2_PACKAGE_LIBPMT=n
+' ##
+fi
+
+#--- OCTEONTX and CN10K targets only ----------------------
+if [[ $is_cn10k ]] || [[ $is_octeontx_any ]]; then
+frag_txt '#
+BR2_PACKAGE_MRVL_UTILS=y
+' ##
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_MRVL_UTILS_GIT=y
+' ##
+fi
+fi
+
+##
+#--- MUSDK -----------------------
+#
+if [[ $is_armada_any ]]; then
+frag_txt '#
+BR2_PACKAGE_MUSDK_MARVELL=y
+BR2_PACKAGE_MUSDK_MARVELL_PP2=y
+# BR2_PACKAGE_MUSDK_MARVELL_PP2_LOCK is not set
+BR2_PACKAGE_MUSDK_MARVELL_NETA=y
+BR2_PACKAGE_MUSDK_MARVELL_SAM=y
+BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_APPLY=n
+BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_LINUX_4_14=y
+' ##
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_GIT=y
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-musdk.git"
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_REPO_VERSION="musdk-sdk13-devel"
+' ##
+fi
+if [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL=y
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL_LOCATION="$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/musdk-marvell/sources-musdk-marvell-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+' ##
+fi
+fi
+
+##SERDES-CLI
+#
+
+if [[ $is_cn10k ]] || [[ $is_octeontx2 ]]; then
+frag_txt '#
+BR2_PACKAGE_SERDES_CLI=y
+' ##
+
+if [[ $is_cn10k ]]; then
+frag_txt '#
+BR2_PACKAGE_SERDES_CLI_CN10K=y
+' ##
+fi
+
+if [[ $is_octeontx2 ]]; then
+frag_txt '#
+BR2_PACKAGE_SERDES_CLI_CN9K=y
+' ##
+fi
+
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_SERDES_CLI_GIT=y
+' ##
+fi
+fi
+
+
+#Mrvl-MCP-SHM
+#
+if [[ $is_octeontx2 ]] || [[ $is_cn10k ]]; then
+frag_txt '#
+BR2_PACKAGE_MRVL_MCP_SHM=y
+' ##
+
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_MRVL_MCP_SHM_GIT=y
+' ##
+fi
+fi
+
+#----OVS----#
+if [[ $is_octeontx2 ]] || [[ $is_cn10k ]]; then
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_OVS=y
+BR2_PACKAGE_OVS_CUSTOM_GIT=y
+BR2_PACKAGE_OVS_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-ovs.git"
+BR2_PACKAGE_OVS_CUSTOM_REPO_VERSION="ovs-3.2-devel"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_OVS=y
+BR2_PACKAGE_OVS_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_OVS_CUSTOM_ARCHIVE_LOCATION="$(TOPDIR)/../base-sources-$(OVS_RELEASE)/ovs/sources-ovs-$(OVS_RELEASE).tar.bz2"
+' ##
+fi
+fi
+
+
+#----LIBCNXK_DEBUG--------
+
+if [[ $is_octeontx2 ]] || [[ $is_cn10k ]]; then
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_LIBCNXK_DEBUG=y
+BR2_PACKAGE_LIBCNXK_DEBUG_CUSTOM_GIT=y
+BR2_PACKAGE_LIBCNXK_DEBUG_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-libcnxk-debug.git"
+BR2_PACKAGE_LIBCNXK_DEBUG_CUSTOM_REPO_VERSION="libcnxk-debug-devel"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_LIBCNXK_DEBUG=y
+BR2_PACKAGE_LIBCNXK_DEBUG_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_LIBCNXK_DEBUG_CUSTOM_ARCHIVE_LOCATION="$(TOPDIR)/../base-sources-$(LIBCNXK_DEBUG_RELEASE)/libcnxk/sources-libcnxk-$(LIBCNXK_DEBUG_RELEASE).tar.bz2"
+' ##
+fi
+
+if [[ $is_octeontx2 ]]; then
+frag_txt '#
+BR2_PACKAGE_LIBCNXK_DEBUG_PLATFORM_CN9K=y
+BR2_PACKAGE_LIBCNXK_DEBUG_PLATFORM="cn9k"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_LIBCNXK_DEBUG_PLATFORM_CN10K=y
+BR2_PACKAGE_LIBCNXK_DEBUG_PLATFORM="cn10k"
+' ##
+fi
+
+frag_txt '#
+BR2_PACKAGE_LIBCURL=y
+BR2_PACKAGE_LIBCURL_OPENSSL=y
+' ##
+
+fi
+
+
+#----SOCINSIGHT--------
+
+if [[ $is_octeontx2 ]] || [[ $is_cn10k ]]; then
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_SOCINSIGHT=y
+BR2_PACKAGE_SOCINSIGHT_CUSTOM_GIT=y
+BR2_PACKAGE_SOCINSIGHT_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-socinsight.git"
+BR2_PACKAGE_SOCINSIGHT_CUSTOM_REPO_VERSION="socinsight-devel"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_SOCINSIGHT=y
+BR2_PACKAGE_SOCINSIGHT_CUSTOM_ARCHIVE=y
+BR2_PACKAGE_SOCINSIGHT_CUSTOM_ARCHIVE_LOCATION="$(TOPDIR)/../base-sources-$(SOCINSIGHT_RELEASE)/socinsight/sources-socinsight-$(SOCINSIGHT_RELEASE).tar.bz2"
+' ##
+fi
+
+if [[ $is_octeontx2 ]]; then
+frag_txt '#
+BR2_PACKAGE_SOCINSIGHT_PLATFORM_CN9K=y
+BR2_PACKAGE_SOCINSIGHT_PLATFORM="cn9k"
+' ##
+else
+frag_txt '#
+BR2_PACKAGE_SOCINSIGHT_PLATFORM_CN10K=y
+BR2_PACKAGE_SOCINSIGHT_PLATFORM="cn10k"
+' ##
+fi
+
+fi
+
+
+########CN20K######
+if [[ $is_cn20k ]]; then
+frag_txt '#
+BR2_PACKAGE_MRVL_MCP_SHM=n
+BR2_PACKAGE_SERDES_CLI=n
+BR2_PACKAGE_LIBGPIOD=y
+BR2_PACKAGE_LIBCNXK_DEBUG=n
+BR2_PACKAGE_SOCINSIGHT=n
+BR2_PACKAGE_CTI=n
+' ##
+fi

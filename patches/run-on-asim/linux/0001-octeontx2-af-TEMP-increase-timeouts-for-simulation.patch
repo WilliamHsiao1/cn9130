@@ -1,0 +1,30 @@
+From 6ddd8db57839724d05f8160706fc53ab34699e49 Mon Sep 17 00:00:00 2001
+From: Stanislaw Kardach <skardach@marvell.com>
+Date: Wed, 17 Apr 2019 04:45:14 +0200
+Subject: [PATCH] octeontx2-af: TEMP: increase timeouts for simulation
+
+Increase RVU MBOX timeouts for ASIM. This commit can be safely
+discarded when using on a target environment.
+
+Change-Id: If1f0beb0497a3876cb15e0f9efc2e98aafae3c04
+Signed-off-by: Stanislaw Kardach <skardach@marvell.com>
+---
+ drivers/net/ethernet/marvell/octeontx2/af/mbox.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/marvell/octeontx2/af/mbox.h b/drivers/net/ethernet/marvell/octeontx2/af/mbox.h
+index 02f0f68dffa1..d8c083f9f916 100644
+--- a/drivers/net/ethernet/marvell/octeontx2/af/mbox.h
++++ b/drivers/net/ethernet/marvell/octeontx2/af/mbox.h
+@@ -36,7 +36,7 @@
+ 
+ #define INTR_MASK(pfvfs) ((pfvfs < 64) ? (BIT_ULL(pfvfs) - 1) : (~0ull))
+ 
+-#define MBOX_RSP_TIMEOUT	3000 /* Time(ms) to wait for mbox response */
++#define MBOX_RSP_TIMEOUT	500000 /* Time(ms) to wait for mbox response */
+ 
+ #define MBOX_MSG_ALIGN		16  /* Align mbox msg start to 16bytes */
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,42 @@
+config BR2_PACKAGE_SERDES_CLI
+	bool "serdes-cli"
+	help
+	  This is a CSR tool to read and write CSR/System registers from
+	  linux shell on OcteonTX/OcteonTX2 boards
+
+if BR2_PACKAGE_SERDES_CLI
+
+choice
+	prompt "serdes-cli-version"
+	default BR2_PACKAGE_SERDES_CLI_RELEASE
+
+config BR2_PACKAGE_SERDES_CLI_GIT
+	bool "Obtain package from the development GIT"
+
+config BR2_PACKAGE_SERDES_CLI_RELEASE
+	bool "Release archives"
+	help
+	  Use the package sources specified in this SDK release
+
+endchoice
+
+config SERDES_CLI_NAME_BIN
+	string
+	default "serdes-cli-cn10k" if BR2_PACKAGE_SERDES_CLI_CN10K
+	default "serdes-cli" if BR2_PACKAGE_SERDES_CLI_CN9K
+
+config BR2_PACKAGE_SERDES_CLI_CN9K
+	bool "For octeontx2 SoC's"
+
+config BR2_PACKAGE_SERDES_CLI_CN10K
+	bool "For cn10k SoC's"
+
+config BR2_PACKAGE_SERDES_CLI_VERSION
+	string
+	default "cli-cn10k-devel" if BR2_PACKAGE_SERDES_CLI_GIT && BR2_PACKAGE_SERDES_CLI_CN10K
+	default "cli-t9x-devel" if BR2_PACKAGE_SERDES_CLI_GIT && BR2_PACKAGE_SERDES_CLI_CN9K
+	default BR2_MARVELL_RELEASE_ID if BR2_PACKAGE_SERDES_CLI_CUSTOM_TARBALL
+	default BR2_MARVELL_RELEASE_ID if BR2_PACKAGE_SERDES_CLI_RELEASE
+	default BR2_PACKAGE_SERDES_CLI_CUSTOM_REPO_VERSION if BR2_PACKAGE_SERDES_CLI_CUSTOM_GIT
+
+endif

@@ -1,0 +1,20 @@
+sdk-base license summary
+========================
+
+The sdk-base contains source code which is mostly developed by Marvell.
+This file gives a short overview of the various components and pointers
+to their exact license information.
+In the event of a conflict, the license header of a specific file or
+project takes precedence over this file. This is just a summary file.
+
+Components
+==========
+
+Component:      sdk-base
+License:        BSD-style
+License Text:   BSD3
+Project URL:    N/A
+Directories:    board/marvell/fit/* cconfigs.mv_fra/* scripts/* package/*
+
+License Text:   BSD2
+File:           package/dpdk/dpdk.mk

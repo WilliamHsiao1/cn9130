@@ -1,0 +1,18 @@
+diff --git a/config/meson.build.orig b/config/meson.build
+index 6d9ffd4..abd0358 100644
+--- a/config/meson.build.orig
++++ b/config/meson.build
+@@ -173,6 +173,13 @@ if link_lib != ''
+     dpdk_extra_ldflags += '-l' + link_lib
+ endif
+ 
++add_project_link_arguments('-lz', language: 'c')
++dpdk_extra_ldflags += '-lz'
++add_project_link_arguments('-lnl-3', language: 'c')
++dpdk_extra_ldflags += '-lnl-3'
++add_project_link_arguments('-lnl-genl-3', language: 'c')
++dpdk_extra_ldflags += '-lnl-genl-3'
++
+ # check for libraries used in multiple places in DPDK
+ has_libnuma = 0
+ find_libnuma = true

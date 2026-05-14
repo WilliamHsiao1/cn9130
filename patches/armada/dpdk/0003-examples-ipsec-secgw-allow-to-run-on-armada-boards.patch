@@ -1,0 +1,206 @@
+From 6134158827ac5bd2dc5e613ac6854e5a90aced23 Mon Sep 17 00:00:00 2001
+From: michaelsh <michaelsh@marvell.com>
+Date: Sun, 13 Jan 2019 17:20:55 +0200
+Subject: [PATCH] examples/ipsec-secgw: allow to run on armada boards
+
+v2:
+Support 3 and 4 cores
+v1:
+Use IP addresses 192.168.175.0 and 192.168.185.0
+to send bi-direction traffic with AES-128-CBC-HMAC-SHA1
+on back2back setup.
+
+Change-Id: I17c72157bd827c0cdea986302ab665c6da6b8992
+Signed-off-by: michaelsh <michaelsh@marvell.com>
+---
+ examples/ipsec-secgw/ep0.cfg | 32 +++++++++++++++++++++++++++++++-
+ examples/ipsec-secgw/ep1.cfg | 32 +++++++++++++++++++++++++++++++-
+ 2 files changed, 62 insertions(+), 2 deletions(-)
+
+diff --git a/examples/ipsec-secgw/ep0.cfg b/examples/ipsec-secgw/ep0.cfg
+index dfd4aca7d..e38fbfb2c 100644
+--- a/examples/ipsec-secgw/ep0.cfg
++++ b/examples/ipsec-secgw/ep0.cfg
+@@ -15,6 +15,8 @@ sp ipv4 out esp protect 5 pri 1 dst 192.168.105.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 6 pri 1 dst 192.168.106.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 10 pri 1 dst 192.168.175.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 11 pri 1 dst 192.168.176.0/24 sport 0:65535 dport 0:65535
++sp ipv4 out esp protect 12 pri 1 dst 192.168.177.10/32 sport 0:65535 dport 0:65535
++sp ipv4 out esp protect 13 pri 1 dst 192.168.177.11/32 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 15 pri 1 dst 192.168.200.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 16 pri 1 dst 192.168.201.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 25 pri 1 dst 192.168.55.0/24 sport 0:65535 dport 0:65535
+@@ -26,6 +28,8 @@ sp ipv4 in esp protect 105 pri 1 dst 192.168.115.0/24 sport 0:65535 dport 0:6553
+ sp ipv4 in esp protect 106 pri 1 dst 192.168.116.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 110 pri 1 dst 192.168.185.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 111 pri 1 dst 192.168.186.0/24 sport 0:65535 dport 0:65535
++sp ipv4 in esp protect 112 pri 1 dst 192.168.187.10/32 sport 0:65535 dport 0:65535
++sp ipv4 in esp protect 113 pri 1 dst 192.168.187.11/32 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 115 pri 1 dst 192.168.210.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 116 pri 1 dst 192.168.211.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 115 pri 1 dst 192.168.210.0/24 sport 0:65535 dport 0:65535
+@@ -44,6 +48,10 @@ sp ipv6 out esp protect 10 pri 1 dst 0000:0000:1111:1111:0000:0000:0000:0000/96
+ sport 0:65535 dport 0:65535
+ sp ipv6 out esp protect 11 pri 1 dst 0000:0000:1111:1111:1111:1111:0000:0000/96 \
+ sport 0:65535 dport 0:65535
++sp ipv6 out esp protect 12 pri 1 dst 0000:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
++sp ipv6 out esp protect 13 pri 1 dst 0000:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
+ sp ipv6 out esp protect 25 pri 1 dst 0000:0000:0000:0000:aaaa:aaaa:0000:0000/96 \
+ sport 0:65535 dport 0:65535
+ sp ipv6 out esp protect 26 pri 1 dst 0000:0000:0000:0000:bbbb:bbbb:0000:0000/96 \
+@@ -53,6 +61,10 @@ sp ipv6 in esp protect 110 pri 1 dst ffff:0000:1111:1111:0000:0000:0000:0000/96
+ sport 0:65535 dport 0:65535
+ sp ipv6 in esp protect 111 pri 1 dst ffff:0000:1111:1111:1111:1111:0000:0000/96 \
+ sport 0:65535 dport 0:65535
++sp ipv6 in esp protect 112 pri 1 dst ffff:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
++sp ipv6 in esp protect 113 pri 1 dst ffff:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
+ sp ipv6 in esp protect 115 pri 1 dst ffff:0000:0000:0000:5555:5555:0000:0000/96 \
+ sport 0:65535 dport 0:65535
+ sp ipv6 in esp protect 116 pri 1 dst ffff:0000:0000:0000:6666:6666:0000:0000/96 \
+@@ -79,6 +91,14 @@ sa out 11 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
+ 
++sa out 12 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
++sa out 13 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
+ sa out 15 cipher_algo null auth_algo null mode ipv4-tunnel src 172.16.1.5 \
+ dst 172.16.2.5
+ 
+@@ -113,6 +133,14 @@ sa in 111 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
+ 
++sa in 112 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
++sa in 113 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
+ sa in 115 cipher_algo null auth_algo null mode ipv4-tunnel src 172.16.2.5 \
+ dst 172.16.1.5
+ 
+@@ -135,14 +163,16 @@ rt ipv4 dst 172.16.2.5/32 port 0
+ rt ipv4 dst 172.16.2.6/32 port 1
+ rt ipv4 dst 192.168.175.0/24 port 0
+ rt ipv4 dst 192.168.176.0/24 port 1
++rt ipv4 dst 192.168.177.0/24 port 0
+ rt ipv4 dst 192.168.240.0/24 port 0
+ rt ipv4 dst 192.168.241.0/24 port 1
+ rt ipv4 dst 192.168.115.0/24 port 2
+ rt ipv4 dst 192.168.116.0/24 port 3
+ rt ipv4 dst 192.168.65.0/24 port 2
+ rt ipv4 dst 192.168.66.0/24 port 3
+-rt ipv4 dst 192.168.185.0/24 port 2
++rt ipv4 dst 192.168.185.0/24 port 1
+ rt ipv4 dst 192.168.186.0/24 port 3
++rt ipv4 dst 192.168.187.0/24 port 1
+ rt ipv4 dst 192.168.210.0/24 port 2
+ rt ipv4 dst 192.168.211.0/24 port 3
+ rt ipv4 dst 192.168.245.0/24 port 2
+diff --git a/examples/ipsec-secgw/ep1.cfg b/examples/ipsec-secgw/ep1.cfg
+index 19bdc68ea..2fe5516ae 100644
+--- a/examples/ipsec-secgw/ep1.cfg
++++ b/examples/ipsec-secgw/ep1.cfg
+@@ -15,6 +15,8 @@ sp ipv4 in esp protect 5 pri 1 dst 192.168.105.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 6 pri 1 dst 192.168.106.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 10 pri 1 dst 192.168.175.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 11 pri 1 dst 192.168.176.0/24 sport 0:65535 dport 0:65535
++sp ipv4 in esp protect 12 pri 1 dst 192.168.177.10/32 sport 0:65535 dport 0:65535
++sp ipv4 in esp protect 13 pri 1 dst 192.168.177.11/32 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 15 pri 1 dst 192.168.200.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 16 pri 1 dst 192.168.201.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 in esp protect 25 pri 1 dst 192.168.55.0/24 sport 0:65535 dport 0:65535
+@@ -26,6 +28,8 @@ sp ipv4 out esp protect 105 pri 1 dst 192.168.115.0/24 sport 0:65535 dport 0:655
+ sp ipv4 out esp protect 106 pri 1 dst 192.168.116.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 110 pri 1 dst 192.168.185.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 111 pri 1 dst 192.168.186.0/24 sport 0:65535 dport 0:65535
++sp ipv4 out esp protect 112 pri 1 dst 192.168.187.10/32 sport 0:65535 dport 0:65535
++sp ipv4 out esp protect 113 pri 1 dst 192.168.187.11/32 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 115 pri 1 dst 192.168.210.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 116 pri 1 dst 192.168.211.0/24 sport 0:65535 dport 0:65535
+ sp ipv4 out esp protect 115 pri 1 dst 192.168.210.0/24 sport 0:65535 dport 0:65535
+@@ -44,6 +48,10 @@ sp ipv6 in esp protect 10 pri 1 dst 0000:0000:1111:1111:0000:0000:0000:0000/96 \
+ sport 0:65535 dport 0:65535
+ sp ipv6 in esp protect 11 pri 1 dst 0000:0000:1111:1111:1111:1111:0000:0000/96 \
+ sport 0:65535 dport 0:65535
++sp ipv6 in esp protect 12 pri 1 dst 0000:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
++sp ipv6 in esp protect 13 pri 1 dst 0000:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
+ sp ipv6 in esp protect 25 pri 1 dst 0000:0000:0000:0000:aaaa:aaaa:0000:0000/96 \
+ sport 0:65535 dport 0:65535
+ sp ipv6 in esp protect 26 pri 1 dst 0000:0000:0000:0000:bbbb:bbbb:0000:0000/96 \
+@@ -53,6 +61,10 @@ sp ipv6 out esp protect 110 pri 1 dst ffff:0000:1111:1111:0000:0000:0000:0000/96
+ sport 0:65535 dport 0:65535
+ sp ipv6 out esp protect 111 pri 1 dst ffff:0000:1111:1111:1111:1111:0000:0000/96 \
+ sport 0:65535 dport 0:65535
++sp ipv6 out esp protect 112 pri 1 dst ffff:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
++sp ipv6 out esp protect 113 pri 1 dst ffff:0000:1111:1111:1111:1111:0000:0000/96 \
++sport 0:65535 dport 0:65535
+ sp ipv6 out esp protect 115 pri 1 dst ffff:0000:0000:0000:5555:5555:0000:0000/96 \
+ sport 0:65535 dport 0:65535
+ sp ipv6 out esp protect 116 pri 1 dst ffff:0000:0000:0000:6666:6666:0000:0000/96 \
+@@ -79,6 +91,14 @@ sa in 11 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
+ 
++sa in 12 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
++sa in 13 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
+ sa in 15 cipher_algo null auth_algo null mode ipv4-tunnel src 172.16.1.5 \
+ dst 172.16.2.5
+ 
+@@ -113,6 +133,14 @@ sa out 111 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
+ b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
+ 
++sa out 112 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
++sa out 113 cipher_algo aes-128-cbc cipher_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2 auth_algo sha1-hmac auth_key b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:b2:\
++b2:b2:b2:b2:b2:b2:b2:b2:b2 mode transport
++
+ sa out 115 cipher_algo null auth_algo null mode ipv4-tunnel src 172.16.2.5 \
+ dst 172.16.1.5
+ 
+@@ -135,14 +163,16 @@ rt ipv4 dst 172.16.1.5/32 port 0
+ rt ipv4 dst 172.16.1.6/32 port 1
+ rt ipv4 dst 192.168.185.0/24 port 0
+ rt ipv4 dst 192.168.186.0/24 port 1
++rt ipv4 dst 192.168.187.0/24 port 0
+ rt ipv4 dst 192.168.245.0/24 port 0
+ rt ipv4 dst 192.168.246.0/24 port 1
+ rt ipv4 dst 192.168.105.0/24 port 2
+ rt ipv4 dst 192.168.106.0/24 port 3
+ rt ipv4 dst 192.168.55.0/24 port 2
+ rt ipv4 dst 192.168.56.0/24 port 3
+-rt ipv4 dst 192.168.175.0/24 port 2
++rt ipv4 dst 192.168.175.0/24 port 1
+ rt ipv4 dst 192.168.176.0/24 port 3
++rt ipv4 dst 192.168.177.0/24 port 1
+ rt ipv4 dst 192.168.200.0/24 port 2
+ rt ipv4 dst 192.168.201.0/24 port 3
+ rt ipv4 dst 192.168.240.0/24 port 2
+-- 
+2.23.0
+

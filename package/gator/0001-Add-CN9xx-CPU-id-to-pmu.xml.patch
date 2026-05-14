@@ -1,0 +1,25 @@
+From ceca9454acb0689b3185b4c4730b117bcc1a4f0a Mon Sep 17 00:00:00 2001
+From: George Cherian <george.cherian@marvell.com>
+Date: Thu, 16 Sep 2021 22:22:28 +0530
+Subject: [PATCH] Add CN9xx CPU id to pmu.xml
+
+Signed-off-by: George Cherian <george.cherian@marvell.com>
+---
+ daemon/pmus.xml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/daemon/pmus.xml b/daemon/pmus.xml
+index 31ec9cf..80d6fd9 100644
+--- a/daemon/pmus.xml
++++ b/daemon/pmus.xml
+@@ -129,6 +129,7 @@
+         <cpuid id="0x430a1" />
+         <cpuid id="0x430a2" />
+         <cpuid id="0x430a3" />
++        <cpuid id="0x430b2" />
+     </pmu>
+ 
+     <!-- Ampere -->
+-- 
+2.25.1
+

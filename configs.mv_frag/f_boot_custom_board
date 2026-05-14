@@ -1,0 +1,73 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_boot_custom_board>
+#
+# This fragment to be replaced with customer's board/platfor defines.
+# This default-template is aligned to the octeontx2/cn96xx platform.
+# When "custom" variant is selected for the compile.sh -- no any DEFCONFIG
+# change-processing would be done inside of compile.sh but this fragment would
+# be used transparently in DEFCONFIG.
+
+
+if [[ $is_custom_board ]]; then
+frag_txt_cr ''
+frag_txt_cr "#--- Boot-image fragments ---"
+
+
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_TARGET_ARM_TRUSTED_FIRMWARE=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_GIT=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/octeon-atf.git"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_REPO_VERSION="atf-v2.8-devel"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_FIP=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="LOAD_IMAGE_V2=1 BL33=/dev/null SPD=none"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_INSTALL_FIPTOOL=y
+#
+BR2_TARGET_UBOOT=y
+BR2_TARGET_UBOOT_CUSTOM_GIT=y
+BR2_TARGET_UBOOT_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/octeon-uboot.git"
+BR2_TARGET_UBOOT_CUSTOM_REPO_VERSION="u-boot-2023.01-devel"
+BR2_TARGET_UBOOT_FORMAT_CUSTOM=y
+BR2_TARGET_UBOOT_FORMAT_CUSTOM_NAME="u-boot-nodtb.bin"
+#
+BR2_TARGET_MARVELL_BDK=y
+BR2_TARGET_MARVELL_BDK_GIT=y
+BR2_TARGET_MARVELL_BDK_BOOTFS=y
+#
+' ##
+fi
+if [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_TARGET_ARM_TRUSTED_FIRMWARE=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_TARBALL=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/arm-trusted-firmware/sources-atf-v2.8-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_FIP=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="LOAD_IMAGE_V2=1 BL33=/dev/null SPD=none"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_INSTALL_FIPTOOL=y
+#
+BR2_TARGET_UBOOT=y
+BR2_TARGET_UBOOT_CUSTOM_TARBALL=y
+BR2_TARGET_UBOOT_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/uboot/sources-uboot-2023.01-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+BR2_TARGET_UBOOT_FORMAT_CUSTOM=y
+BR2_TARGET_UBOOT_FORMAT_CUSTOM_NAME="u-boot-nodtb.bin"
+#
+BR2_TARGET_MARVELL_BDK=y
+BR2_TARGET_MARVELL_BDK_BOOTFS=y
+' ##
+fi
+
+##--- Board Property Selectors ------------------
+frag_txt '#
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_PLATFORM="t96"
+BR2_TARGET_UBOOT_BUILD_SYSTEM_KCONFIG=y
+BR2_TARGET_UBOOT_BOARD_DEFCONFIG="octeontx2_96xx"
+BR2_TARGET_MARVELL_BDK_PLATFORM="t96"
+#BR2_TARGET_MARVELL_BDK_ADDITIONAL_DTS=""
+' ##
+
+#-------------------
+fi # is_custom_board

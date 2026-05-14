@@ -1,0 +1,12 @@
+config BR2_PACKAGE_OPENCSD
+	bool "opencsd"
+	help
+	  This is having OpenCSD library with a tool to generate
+	  intermediate trace data.
+
+if BR2_PACKAGE_OPENCSD
+
+config BR2_PACKAGE_OPENCSD_GIT
+	bool "Obtain OpenCSD from GIT"
+
+endif

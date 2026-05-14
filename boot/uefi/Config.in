@@ -1,0 +1,18 @@
+config BR2_TARGET_UEFI
+	bool "UEFI"
+	help
+	  Enable this option if you want to build UEFI
+	  Processors
+
+if BR2_TARGET_UEFI
+
+config BR2_TARGET_UEFI_PLATFORM
+        string "Marvell platform (a80x0, t96...)"
+
+config BR2_TARGET_UEFI_GIT
+	bool "Obtain UEFI sources from GIT"
+
+config BR2_TARGET_UEFI_DEBUG
+	bool "DEBUG build-target vs RELEASE"
+
+endif

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_last_overwrite>
+#
+# Defconfig BR2 parameter may defined more than once, but only last really works.
+# The new/added fragment <f_last_overwrite> is called LAST and therefore
+# force-overwrites a BR2 declared previously in any other Marvell or Boot or
+# Mainline fragment.
+#
+# Conventional configuration should be done over other fragments, but sometimes
+# few lines overwriting simplifies the configuration.
+#
+# Do not use "BR2 is not set" to overwrite previously declared '=y' but write
+# explicit BR2=n
+#
+frag_txt_cr ''
+#[[ $is_octeontx2 ]] && frag_txt_cr 'BR2_PACKAGE_TEMPLATE_YN=y'
+#[[ $is_octeontx2 ]] && frag_txt_cr 'BR2_PACKAGE_TEMPLATE_YN=n'
+#[[ $is_octeontx2 ]] && frag_txt_cr 'BR2_PACKAGE_TEMPLATE_TEXT="template text"'
+
+if [[ $mv_gcc10 ]]; then
+frag_txt '# WA: Overwrite NO to disable packages failed on GCC10 compilation
+BR2_PACKAGE_MEMTESTER=n
+BR2_PACKAGE_LINUX_TOOLS_CPUPOWER=n
+BR2_PACKAGE_LINUX_TOOLS_GPIO=n
+BR2_PACKAGE_MEMUTILS=n
+BR2_PACKAGE_TDM_UTILS=n
+BR2_PACKAGE_MBEDTLS=n
+BR2_PACKAGE_MBEDTLS_INSTALL_SOURCES_STAGING=n
+' ##
+fi
+

@@ -1,0 +1,19 @@
+config BR2_PACKAGE_CAVIUM_XDP_IPFWD
+	bool "cavium-xdp-ipfwd"
+	select BR2_PACKAGE_ZLIB
+	select BR2_PACKAGE_LIBZLIB
+	select BR2_PACKAGE_ELFUTILS
+	select BR2_PACKAGE_CLANG
+	select BR2_PACKAGE_LLVM
+	select BR2_PACKAGE_LLVM_BPF
+	depends on BR2_LINUX_KERNEL
+	help
+	  Install Marvell XDP IP-forwarding program into the
+	  filesystem.
+
+if BR2_PACKAGE_CAVIUM_XDP_IPFWD
+
+config BR2_PACKAGE_CAVIUM_XDP_IPFWD_GIT
+	bool "Obtain Cavium XDP IP-forwarding program sources from GIT"
+
+endif

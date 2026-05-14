@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LIBIPSEC_MB
+	bool "libipsec-mb"
+	default n
+	help
+		The library provides software crypto acceleration primarily targeting packet processing applications. It can be used for application such as: IPsec, TLS, Wireless (RAN), Cable or MPEG DRM.
+		The library is used as software crypto provider in DPDK, Intel(R) QAT Engine and FD.io.
+
+config BR2_PACKAGE_LIBIPSEC_MB_VERSION
+        string "version-id"

@@ -1,0 +1,446 @@
+From 5ebe5c03e8986b5c3aa6e7b41c6b54b6b533d476 Mon Sep 17 00:00:00 2001
+From: Bharat Bhushan <bbhushan2@marvell.com>
+Date: Thu, 25 Nov 2021 22:42:02 +0530
+Subject: [PATCH] arm64: cn10k: Add workaround for LLC TAD block
+
+Due to this silicon errata, ordering between memory writes
+enforced by software using barrier instructions like dmb st
+wont work as expected on cn10k.
+
+Lets consider this example below,
+
+int data = -1;
+int valid = 0;
+
+CPU 0:		CPU 1:
+
+data = 5; 	if (valid) {
+wmb();			rmb();
+valid = 1;		process(data);
+		}
+In this case, it could happen that, CPU 1 reads "data" as -1
+inside the function process, though the expectation is that
+after the write to "valid" is observed by CPU 1 its guaranteed
+to always observe the previous write to "data" as well.
+
+Hence this would affect locking primitives, atomics with ordering
+requirements, explicit barrier usages etc.
+
+The workaround is to add additional delay for every write barrier
+instructions so as to ensure desired ordering of writes.
+
+ie.
+Add delay followed by ISB *after* the following:
+** dmb {ishst, oshst, st, sy}
+** dsb {ishst, oshst, st, sy}
+
+Add DSB SY, ISB, delay, ISB *before* the following:
+** stlx{r,p}
+** stl{,u}r{,b,h}
+** ld{set,eor,clr,add,max,umax,min,umin}{l,al}{,b,h}
+** st{set,eor,clr,add,max,umax,min,umin }l{,b,h}
+** cas{l,al}{,b,h}, casp{l,al}
+** swp{l,al}{,b,h}
+
+Scenarios where the workaround is not applicable for barriers,
+* Usage for CPU-IO interactions in device drivers.
+* Usage where data is not cached, early boot for example
+  when MMU is turned off.
+* Usage where CPU-CPU interactions are not involved , early boot for
+  example while creating kernel page tables.
+
+Change-Id: I3611cdab5d869d12487ff7ea9409c5854d23d656
+Signed-off-by: Bharat Bhushan <bbhushan2@marvell.com>
+Signed-off-by: Linu Cherian <lcherian@marvell.com>
+---
+ arch/arm64/Kconfig                        | 11 +++
+ arch/arm64/include/asm/atomic.h           | 24 +++++--
+ arch/arm64/include/asm/barrier.h          | 24 +++++--
+ arch/arm64/include/asm/cmpxchg.h          | 84 ++++++++++++++++++-----
+ arch/arm64/include/asm/cn10k_workaround.h | 44 ++++++++++++
+ arch/arm64/include/asm/futex.h            |  8 +++
+ 6 files changed, 167 insertions(+), 28 deletions(-)
+ create mode 100644 arch/arm64/include/asm/cn10k_workaround.h
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 3d4bf619b889..d816ec90267f 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -689,6 +689,17 @@ config MRVL_ERRATUM_38545
+ 
+ 	  If unsure, say Y.
+ 
++config MRVL_CN10K_DATA_CONSISTENCY_WA
++	bool "Marvell CN10K data consistency workaround"
++	default y
++	help
++	 CN10K LLC TAD block have an issue that leads to data consistency
++	 issue where ordering between memory writes enforced by software using
++	 barrier instructions wont work as expected. The workaround is to add
++	 additional delay for every write barrier instructions so as to ensure
++	 desired ordering of writes. Also add delay before instructions with
++	 release semantics to ensure ordering.
++
+ config QCOM_FALKOR_ERRATUM_1003
+ 	bool "Falkor E1003: Incorrect translation due to ASID change"
+ 	default y
+diff --git a/arch/arm64/include/asm/atomic.h b/arch/arm64/include/asm/atomic.h
+index 6e0f48ddfc65..c021227a67e3 100644
+--- a/arch/arm64/include/asm/atomic.h
++++ b/arch/arm64/include/asm/atomic.h
+@@ -15,6 +15,7 @@
+ #include <asm/barrier.h>
+ #include <asm/cmpxchg.h>
+ #include <asm/lse.h>
++#include <asm/cn10k_workaround.h>
+ 
+ #define ATOMIC_OP(op)							\
+ static __always_inline void arch_##op(int i, atomic_t *v)		\
+@@ -31,6 +32,12 @@ ATOMIC_OP(atomic_sub)
+ 
+ #undef ATOMIC_OP
+ 
++#define ATOMIC_FETCH_OP_FIX(name, op)					\
++static __always_inline int arch_##op##name(int i, atomic_t *v)		\
++{									\
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;				\
++	return __lse_ll_sc_body(op##name, i, v); 			\
++}
+ #define ATOMIC_FETCH_OP(name, op)					\
+ static __always_inline int arch_##op##name(int i, atomic_t *v)		\
+ {									\
+@@ -40,8 +47,9 @@ static __always_inline int arch_##op##name(int i, atomic_t *v)		\
+ #define ATOMIC_FETCH_OPS(op)						\
+ 	ATOMIC_FETCH_OP(_relaxed, op)					\
+ 	ATOMIC_FETCH_OP(_acquire, op)					\
+-	ATOMIC_FETCH_OP(_release, op)					\
+-	ATOMIC_FETCH_OP(        , op)
++	ATOMIC_FETCH_OP_FIX(_release, op)				\
++	ATOMIC_FETCH_OP_FIX(        , op)
++
+ 
+ ATOMIC_FETCH_OPS(atomic_fetch_andnot)
+ ATOMIC_FETCH_OPS(atomic_fetch_or)
+@@ -70,6 +78,13 @@ ATOMIC64_OP(atomic64_sub)
+ 
+ #undef ATOMIC64_OP
+ 
++#define ATOMIC64_FETCH_OP_FIX(name, op)					\
++static __always_inline long arch_##op##name(long i, atomic64_t *v)	\
++{									\
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;				\
++	return __lse_ll_sc_body(op##name, i, v);			\
++}
++
+ #define ATOMIC64_FETCH_OP(name, op)					\
+ static __always_inline long arch_##op##name(long i, atomic64_t *v)	\
+ {									\
+@@ -79,8 +94,8 @@ static __always_inline long arch_##op##name(long i, atomic64_t *v)	\
+ #define ATOMIC64_FETCH_OPS(op)						\
+ 	ATOMIC64_FETCH_OP(_relaxed, op)					\
+ 	ATOMIC64_FETCH_OP(_acquire, op)					\
+-	ATOMIC64_FETCH_OP(_release, op)					\
+-	ATOMIC64_FETCH_OP(        , op)
++	ATOMIC64_FETCH_OP_FIX(_release, op)				\
++	ATOMIC64_FETCH_OP_FIX(        , op)
+ 
+ ATOMIC64_FETCH_OPS(atomic64_fetch_andnot)
+ ATOMIC64_FETCH_OPS(atomic64_fetch_or)
+@@ -96,6 +111,7 @@ ATOMIC64_FETCH_OPS(atomic64_sub_return)
+ 
+ static __always_inline long arch_atomic64_dec_if_positive(atomic64_t *v)
+ {
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;
+ 	return __lse_ll_sc_body(atomic64_dec_if_positive, v);
+ }
+ 
+diff --git a/arch/arm64/include/asm/barrier.h b/arch/arm64/include/asm/barrier.h
+index c21a90b3925e..38c5a3ab65cd 100644
+--- a/arch/arm64/include/asm/barrier.h
++++ b/arch/arm64/include/asm/barrier.h
+@@ -10,6 +10,7 @@
+ #ifndef __ASSEMBLY__
+ 
+ #include <linux/kasan-checks.h>
++#include <asm/cn10k_workaround.h>
+ 
+ #define __nops(n)	".rept	" #n "\nnop\n.endr\n"
+ #define nops(n)		asm volatile(__nops(n))
+@@ -19,8 +20,8 @@
+ #define wfi()		asm volatile("wfi" : : : "memory")
+ 
+ #define isb()		asm volatile("isb" : : : "memory")
+-#define dmb(opt)	asm volatile("dmb " #opt : : : "memory")
+-#define dsb(opt)	asm volatile("dsb " #opt : : : "memory")
++#define dmb_arch(opt)	asm volatile("dmb " #opt : : : "memory")
++#define dsb_arch(opt)	asm volatile("dsb " #opt : : : "memory")
+ 
+ #define psb_csync()	asm volatile("hint #17" : : : "memory")
+ #define tsb_csync()	asm volatile("hint #18" : : : "memory")
+@@ -30,12 +31,22 @@
+ 						 SB_BARRIER_INSN"nop\n",	\
+ 						 ARM64_HAS_SB))
+ 
++#define dmb(opt)	do {						\
++				dmb_arch(opt);				\
++				CN10K_DATA_CONSISTENCY_BARRIER_WA;	\
++			} while (0)
++#define dsb(opt)	do {						\
++				dsb_arch(opt);				\
++				CN10K_DATA_CONSISTENCY_BARRIER_WA;	\
++			} while (0)
++
++
+ #define mb()		dsb(sy)
+-#define rmb()		dsb(ld)
++#define rmb()		dsb_arch(ld)
+ #define wmb()		dsb(st)
+ 
+-#define dma_rmb()	dmb(oshld)
+-#define dma_wmb()	dmb(oshst)
++#define dma_rmb()	dmb_arch(oshld)
++#define dma_wmb()	dmb_arch(oshst)
+ 
+ #define instr_sync()	isb()
+ 
+@@ -61,7 +72,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long idx,
+ }
+ 
+ #define __smp_mb()	dmb(ish)
+-#define __smp_rmb()	dmb(ishld)
++#define __smp_rmb()	dmb_arch(ishld)
+ #define __smp_wmb()	dmb(ishst)
+ 
+ #define __smp_store_release(p, v)					\
+@@ -71,6 +82,7 @@ do {									\
+ 		{ .__val = (__force typeof(*p)) (v) };			\
+ 	compiletime_assert_atomic_type(*p);				\
+ 	kasan_check_write(__p, sizeof(*p));				\
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;				\
+ 	switch (sizeof(*p)) {						\
+ 	case 1:								\
+ 		asm volatile ("stlrb %w1, %0"				\
+diff --git a/arch/arm64/include/asm/cmpxchg.h b/arch/arm64/include/asm/cmpxchg.h
+index f9bef42c1411..62b07e9bf215 100644
+--- a/arch/arm64/include/asm/cmpxchg.h
++++ b/arch/arm64/include/asm/cmpxchg.h
+@@ -12,6 +12,7 @@
+ 
+ #include <asm/barrier.h>
+ #include <asm/lse.h>
++#include <asm/cn10k_workaround.h>
+ 
+ /*
+  * We need separate acquire parameters for ll/sc and lse, since the full
+@@ -42,6 +43,31 @@ static inline u##sz __xchg_case_##name##sz(u##sz x, volatile void *ptr)		\
+ 	return ret;								\
+ }
+ 
++#define __XCHG_CASE_FIX(w, sfx, name, sz, mb, nop_lse, acq, acq_lse, rel, cl)	\
++static inline u##sz __xchg_case_##name##sz(u##sz x, volatile void *ptr)		\
++{										\
++	u##sz ret;								\
++	unsigned long tmp;							\
++										\
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;					\
++	asm volatile(ARM64_LSE_ATOMIC_INSN(					\
++	/* LL/SC */								\
++	"	prfm	pstl1strm, %2\n"					\
++	"1:	ld" #acq "xr" #sfx "\t%" #w "0, %2\n"				\
++	"	st" #rel "xr" #sfx "\t%w1, %" #w "3, %2\n"			\
++	"	cbnz	%w1, 1b\n"						\
++	"	" #mb,								\
++	/* LSE atomics */							\
++	"	swp" #acq_lse #rel #sfx "\t%" #w "3, %" #w "0, %2\n"		\
++		__nops(3)							\
++	"	" #nop_lse)							\
++	: "=&r" (ret), "=&r" (tmp), "+Q" (*(u##sz *)ptr)			\
++	: "r" (x)								\
++	: cl);									\
++										\
++	return ret;								\
++}
++
+ __XCHG_CASE(w, b,     ,  8,        ,    ,  ,  ,  ,         )
+ __XCHG_CASE(w, h,     , 16,        ,    ,  ,  ,  ,         )
+ __XCHG_CASE(w,  ,     , 32,        ,    ,  ,  ,  ,         )
+@@ -50,14 +76,14 @@ __XCHG_CASE(w, b, acq_,  8,        ,    , a, a,  , "memory")
+ __XCHG_CASE(w, h, acq_, 16,        ,    , a, a,  , "memory")
+ __XCHG_CASE(w,  , acq_, 32,        ,    , a, a,  , "memory")
+ __XCHG_CASE( ,  , acq_, 64,        ,    , a, a,  , "memory")
+-__XCHG_CASE(w, b, rel_,  8,        ,    ,  ,  , l, "memory")
+-__XCHG_CASE(w, h, rel_, 16,        ,    ,  ,  , l, "memory")
+-__XCHG_CASE(w,  , rel_, 32,        ,    ,  ,  , l, "memory")
+-__XCHG_CASE( ,  , rel_, 64,        ,    ,  ,  , l, "memory")
+-__XCHG_CASE(w, b,  mb_,  8, dmb ish, nop,  , a, l, "memory")
+-__XCHG_CASE(w, h,  mb_, 16, dmb ish, nop,  , a, l, "memory")
+-__XCHG_CASE(w,  ,  mb_, 32, dmb ish, nop,  , a, l, "memory")
+-__XCHG_CASE( ,  ,  mb_, 64, dmb ish, nop,  , a, l, "memory")
++__XCHG_CASE_FIX(w, b, rel_,  8,        ,    ,  ,  , l, "memory")
++__XCHG_CASE_FIX(w, h, rel_, 16,        ,    ,  ,  , l, "memory")
++__XCHG_CASE_FIX(w,  , rel_, 32,        ,    ,  ,  , l, "memory")
++__XCHG_CASE_FIX( ,  , rel_, 64,        ,    ,  ,  , l, "memory")
++__XCHG_CASE_FIX(w, b,  mb_,  8, dmb ish, nop,  , a, l, "memory")
++__XCHG_CASE_FIX(w, h,  mb_, 16, dmb ish, nop,  , a, l, "memory")
++__XCHG_CASE_FIX(w,  ,  mb_, 32, dmb ish, nop,  , a, l, "memory")
++__XCHG_CASE_FIX( ,  ,  mb_, 64, dmb ish, nop,  , a, l, "memory")
+ 
+ #undef __XCHG_CASE
+ 
+@@ -103,7 +129,17 @@ __XCHG_GEN(_mb)
+ #define arch_xchg_release(...)	__xchg_wrapper(_rel, __VA_ARGS__)
+ #define arch_xchg(...)		__xchg_wrapper( _mb, __VA_ARGS__)
+ 
+-#define __CMPXCHG_CASE(name, sz)			\
++#define __CMPXCHG_CASE_FIX(name, sz)			\
++static inline u##sz __cmpxchg_case_##name##sz(volatile void *ptr,	\
++					      u##sz old,		\
++					      u##sz new)		\
++{									\
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;				\
++	return __lse_ll_sc_body(_cmpxchg_case_##name##sz,		\
++				ptr, old, new);				\
++}
++
++#define __CMPXCHG_CASE(name, sz)					\
+ static inline u##sz __cmpxchg_case_##name##sz(volatile void *ptr,	\
+ 					      u##sz old,		\
+ 					      u##sz new)		\
+@@ -120,14 +156,14 @@ __CMPXCHG_CASE(acq_,  8)
+ __CMPXCHG_CASE(acq_, 16)
+ __CMPXCHG_CASE(acq_, 32)
+ __CMPXCHG_CASE(acq_, 64)
+-__CMPXCHG_CASE(rel_,  8)
+-__CMPXCHG_CASE(rel_, 16)
+-__CMPXCHG_CASE(rel_, 32)
+-__CMPXCHG_CASE(rel_, 64)
+-__CMPXCHG_CASE(mb_,  8)
+-__CMPXCHG_CASE(mb_, 16)
+-__CMPXCHG_CASE(mb_, 32)
+-__CMPXCHG_CASE(mb_, 64)
++__CMPXCHG_CASE_FIX(rel_,  8)
++__CMPXCHG_CASE_FIX(rel_, 16)
++__CMPXCHG_CASE_FIX(rel_, 32)
++__CMPXCHG_CASE_FIX(rel_, 64)
++__CMPXCHG_CASE_FIX(mb_,  8)
++__CMPXCHG_CASE_FIX(mb_, 16)
++__CMPXCHG_CASE_FIX(mb_, 32)
++__CMPXCHG_CASE_FIX(mb_, 64)
+ 
+ #undef __CMPXCHG_CASE
+ 
+@@ -142,8 +178,20 @@ static inline long __cmpxchg_double##name(unsigned long old1,		\
+ 				old1, old2, new1, new2, ptr);		\
+ }
+ 
++#define __CMPXCHG_DBL_FIX(name)						\
++static inline long __cmpxchg_double##name(unsigned long old1,		\
++					 unsigned long old2,		\
++					 unsigned long new1,		\
++					 unsigned long new2,		\
++					 volatile void *ptr)		\
++{									\
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;				\
++	return __lse_ll_sc_body(_cmpxchg_double##name, 			\
++				old1, old2, new1, new2, ptr);		\
++}
++
+ __CMPXCHG_DBL(   )
+-__CMPXCHG_DBL(_mb)
++__CMPXCHG_DBL_FIX(_mb)
+ 
+ #undef __CMPXCHG_DBL
+ 
+diff --git a/arch/arm64/include/asm/cn10k_workaround.h b/arch/arm64/include/asm/cn10k_workaround.h
+new file mode 100644
+index 000000000000..822eedd7c2bf
+--- /dev/null
++++ b/arch/arm64/include/asm/cn10k_workaround.h
+@@ -0,0 +1,44 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (C) 2021 Marvell.
++ */
++
++#ifndef __CN10K_WORKAROUND_H
++#define __CN10K_WORKAROUND_H
++
++#ifdef CONFIG_MRVL_CN10K_DATA_CONSISTENCY_WA
++
++/* .4us equals to counter time count of 500 as timer frequency 1GHz */
++#define ARCH_TIMER_WAIT_COUNT		500
++
++static inline void cn10k_data_consistency_wa_delay(void)
++{
++	unsigned long tmp, tmp1;
++
++	asm volatile ("		mrs %0, cntvct_el0\n"
++		      "		add %1, %0, %2\n"
++		      "100:		mrs %0, cntvct_el0\n"
++		      "		isb\n"
++		      "		cmp %1, %0\n"
++		      "		b.hi 100b\n"
++		      "		isb\n"
++		      : "=r" (tmp), "=r" (tmp1):
++			"Ir" (ARCH_TIMER_WAIT_COUNT): "memory");
++}
++
++#define CN10K_DATA_CONSISTENCY_BARRIER_WA	cn10k_data_consistency_wa_delay();
++
++#define CN10K_DATA_CONSISTENCY_ATOMIC_WA		\
++	do {						\
++		dsb_arch(sy);				\
++		isb();					\
++		cn10k_data_consistency_wa_delay();	\
++	} while (0)
++
++#else
++
++#define CN10K_DATA_CONSISTENCY_BARRIER_WA
++#define CN10K_DATA_CONSISTENCY_ATOMIC_WA
++
++#endif
++#endif // __CN10K_WORKAROUND_H
+diff --git a/arch/arm64/include/asm/futex.h b/arch/arm64/include/asm/futex.h
+index 6cc26a127819..45091f91e6ea 100644
+--- a/arch/arm64/include/asm/futex.h
++++ b/arch/arm64/include/asm/futex.h
+@@ -17,6 +17,8 @@ do {									\
+ 	unsigned int loops = FUTEX_MAX_LOOPS;				\
+ 									\
+ 	uaccess_enable();						\
++	/* Fix for stlxr below */					\
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;				\
+ 	asm volatile(							\
+ "	prfm	pstl1strm, %2\n"					\
+ "1:	ldxr	%w1, %2\n"						\
+@@ -39,6 +41,8 @@ do {									\
+ 	  "+r" (loops)							\
+ 	: "r" (oparg), "Ir" (-EFAULT), "Ir" (-EAGAIN)			\
+ 	: "memory");							\
++	/* Fix for dmb above */						\
++	CN10K_DATA_CONSISTENCY_BARRIER_WA;				\
+ 	uaccess_disable();						\
+ } while (0)
+ 
+@@ -97,6 +101,8 @@ futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *_uaddr,
+ 
+ 	uaddr = __uaccess_mask_ptr(_uaddr);
+ 	uaccess_enable();
++	/* Fix for stlxr below */
++	CN10K_DATA_CONSISTENCY_ATOMIC_WA;
+ 	asm volatile("// futex_atomic_cmpxchg_inatomic\n"
+ "	prfm	pstl1strm, %2\n"
+ "1:	ldxr	%w1, %2\n"
+@@ -119,6 +125,8 @@ futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *_uaddr,
+ 	: "+r" (ret), "=&r" (val), "+Q" (*uaddr), "=&r" (tmp), "+r" (loops)
+ 	: "r" (oldval), "r" (newval), "Ir" (-EFAULT), "Ir" (-EAGAIN)
+ 	: "memory");
++	/* Fix for dmb above */
++	CN10K_DATA_CONSISTENCY_BARRIER_WA;
+ 	uaccess_disable();
+ 
+ 	if (!ret)
+-- 
+2.31.1
+

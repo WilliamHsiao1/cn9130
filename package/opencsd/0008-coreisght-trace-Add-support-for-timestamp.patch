@@ -1,0 +1,147 @@
+From f7f8bedaa1ac7dbb83e9b24e3731b4c214d970d6 Mon Sep 17 00:00:00 2001
+From: Tanmay Jagdale <tanmay@marvell.com>
+Date: Thu, 15 Dec 2022 01:16:44 +0530
+Subject: [PATCH 8/8] coreisght-trace: Add support for timestamp
+
+Add support to parse the I_TIMESTAMP packets.
+
+The timestamps are generated after P0 elements, which makes
+it tricky to assign them to the correct instructions in the
+trace.
+
+Hence parse all the timestamp packets and store it in a list.
+
+Then start going through the decoded trace again and assign
+first timestamp from the list to the first P0 element.
+
+Next for every timestamp encountered, read the next item
+in the list, which would be a timestamp value for a future
+P0 element.
+
+Signed-off-by: Tanmay Jagdale <tanmay@marvell.com>
+---
+ coresight-trace.py | 53 ++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 42 insertions(+), 11 deletions(-)
+
+diff --git a/coresight-trace.py b/coresight-trace.py
+index c5bd5d7..ce80c87 100755
+--- a/coresight-trace.py
++++ b/coresight-trace.py
+@@ -119,9 +119,29 @@ traddr_re3	= re.compile(r"Idx:[0-9]+; I_ADDR_MATCH : Exact Address Match., \[[0-
+ trctx_re	= re.compile(r"Idx:[0-9]+; I_ADDR_CTXT_L_64IS0 : Address & Context, Long, 64 bit, IS0.; Addr=0x([0-9A-F]+); Ctxt: AArch64,EL([0-3]), NS;")
+ tratm_re	= re.compile(r"Idx:[0-9]+; I_ATOM_F[0-9] : Atom format ([0-9]).; ([NE]+)")
+ trexcept_re	= re.compile(r"Idx:[0-9]+; I_EXCEPT : Exception.;  ([A-Za-z ]+); Ret Addr Follows;")
++trtimestamp_re	= re.compile(r"Idx:[0-9]+; I_TIMESTAMP : Timestamp.; Updated val = 0x([0-9a-f]+)")
++
++# Parse all the timestamp values in 'decoded_trace' file and store it in a list
++dec_f = open(decoded_trace, "rt")
++dec_str = dec_f.read()
++tlist = trtimestamp_re.findall(dec_str)
++dec_f.close()
++
++# Count number of timestamps recorded
++tlist_len = len(tlist)
+ 
+-# Walk through decoded trace file and find branch addresses
+ last_inst = 0
++
++# The Timestamp packet is generated after a P0 Element.
++# Hence read the FIRST timestamp value from tlist ahead
++# of the actual instruction tracing.
++timestp = int(tlist[0], 16)
++ts_cnt = 0
++ts_val = ""
++
++# Now we are actually walking through the decoded trace.
++# Use the timestamp value from before and match it with
++# the first P0 element to which it actually belongs.
+ with open(decoded_trace) as dec_trace:
+ 	for l in dec_trace:
+ 		m = trexcept_re.match(l)
+@@ -130,35 +150,46 @@ with open(decoded_trace) as dec_trace:
+ 			next_pkt = next(dec_trace)
+ 			raddrs = next_pkt.split("0x")
+ 			ret_addr = int(raddrs[1][0:16], 16)
+-			print("EXCEPTION %16s: %16x -> Return Address" % (m.group(1), ret_addr))
++			print("EXCEPTION  %38s: %16x -> Return Address" % (cause, ret_addr))
++			continue
++		# When we encounter the Timestamp packet, use the next timestamp
++		# value from tlist which corresponds to a P0 element we will
++		# encounter in future.
++		m = trtimestamp_re.match(l)
++		if m:
++			ts_cnt = ts_cnt + 1
++			if (ts_cnt == tlist_len):
++				continue
++			timestp = int(tlist[ts_cnt],16)
++			ts_val = str(timestp/1000000000)
+ 			continue
+ 		m = trctx_re.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+ 			last_inst = addr
+ 			fname = addr_to_function_lookup(addr)
+-			print("C EL%s %20s: %16x" % (m.group(2), fname, addr))
++			print("CONTEXT EL%s  %36s: %16x" % (m.group(2), fname, addr))
+ 			continue
+ 		m = traddr_re.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+ 			last_inst = addr
+ 			fname = addr_to_function_lookup(addr)
+-			print("A %24s: %16x" % (fname, addr))
++			print("A %47s: %16x" % (fname, addr))
+ 			continue
+ 		m = traddr_re2.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+ 			last_inst = addr
+ 			fname = addr_to_function_lookup(addr)
+-			print("A %24s: %16x" % (fname, addr))
++			print("A %47s: %16x" % (fname, addr))
+ 			continue
+ 		m = traddr_re3.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+ 			last_inst = addr
+ 			fname = addr_to_function_lookup(addr)
+-			print("A %24s: %16x" % (fname, addr))
++			print("A %47s: %16x" % (fname, addr))
+ 			continue
+ 		m = tratm_re.match(l)
+ 		if m:
+@@ -171,26 +202,26 @@ with open(decoded_trace) as dec_trace:
+ 					continue
+ 				fname = addr_to_function_lookup(last_inst)
+ 				while not is_branch(inst):
+-					print("I %24s: %16x: %s" % (fname, last_inst, inst))
++					print("I %16s %30s: %16x: %s" % (ts_val, fname, last_inst, inst))
+ 					last_inst = last_inst + 4
+ 					inst = inst_dict.get(last_inst, "unk")
+ 				else:
+ 					fname = addr_to_function_lookup(last_inst)
+ 					if is_isb(inst):
+-						print("ISB %22s: %16x: %s" % (fname, last_inst, inst))
++						print("ISB %14s %30s: %16x: %s" % (ts_val, fname, last_inst, inst))
+ 						last_inst = last_inst + 4
+ 						inst = inst_dict.get(last_inst, "unk")
+ 						continue
+ 					if is_eret(inst):
+ 						# Address packet follows eret
+-						print("ERET %21s: %16x: %s" % (fname, last_inst, inst))
++						print("ERET %13s %30s: %16x: %s" % (ts_val, fname, last_inst, inst))
+ 						continue
+ 					else:
+ 						(unc, taddr) = branch_info(inst)
+ 						if c == 'E' or unc:
+-							print("E %24s: %16x: %s" % (fname, last_inst, inst))
++							print("E %16s %30s: %16x: %s" % (ts_val, fname, last_inst, inst))
+ 							last_inst = taddr
+ 						else:
+-							print("N %24s: %16x: %s" % (fname, last_inst, inst))
++							print("N %16s %30s: %16x: %s" % (ts_val, fname, last_inst, inst))
+ 							last_inst = last_inst + 4
+ print("Done")
+-- 
+2.34.1
+

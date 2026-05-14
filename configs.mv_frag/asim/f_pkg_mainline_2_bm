@@ -1,0 +1,18 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_pkg_mainline_2_bm>
+#
+source ${base_frag_path}/f_pkg_mainline_2_bm
+
+if [ $f_pkg_mainline_2_include ]; then
+
+frag_txt_cr '#--- Mainline packages 2 (BenchMark) ---
+BR2_PACKAGE_DHCP=n
+BR2_PACKAGE_DHCP_RELAY=n
+BR2_PACKAGE_OPENSSH=n
+' ##
+
+fi #f_pkg_mainline_2_include

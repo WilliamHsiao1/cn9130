@@ -1,0 +1,78 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_boot_armada> for UEFI boot
+#
+# BR2_PACKAGE_ACPICA=y is auto-selected by UEFI upon dependency
+# UEFI Git and/or Tarball are specified in the uefi.mk file
+
+if [[ ! $is_custom_board ]] && [[ $is_armada ]]; then
+frag_txt_cr ''
+frag_txt_cr "#--- Boot-image fragments ---"
+
+
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_TARGET_ARM_TRUSTED_FIRMWARE=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_GIT=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/octeon-atf.git"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_REPO_VERSION="atf-v2.8-devel"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_FIP=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="USE_COHERENT_MEM=0 BL33=$(BINARIES_DIR)/armada_efi.fd"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_DEPENDENCIES="uefi"
+#
+BR2_TARGET_BINARIES_MARVELL=y
+BR2_TARGET_BINARIES_MARVELL_CUSTOM_GIT=y
+BR2_TARGET_BINARIES_MARVELL_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/armada-firmware.git"
+BR2_TARGET_BINARIES_MARVELL_CUSTOM_REPO_VERSION="armada-firmware-10.1.0-devel"
+#
+BR2_TARGET_OPTEE_OS=n
+BR2_TARGET_OPTEE_OS_PLATFORM="marvell-armada7k8k"
+BR2_PACKAGE_OPTEE_TEST=n
+#
+BR2_TARGET_UEFI=y
+BR2_TARGET_UEFI_GIT=y
+#BR2_TARGET_UEFI_DEBUG=y
+#
+BR2_TARGET_MV_DDR_MARVELL=y
+BR2_TARGET_MV_DDR_MARVELL_CUSTOM_GIT=y
+BR2_TARGET_MV_DDR_MARVELL_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/armada-mvddr.git"
+BR2_TARGET_MV_DDR_MARVELL_CUSTOM_REPO_VERSION="mv_ddr-devel"
+' ##
+fi
+if [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_TARGET_ARM_TRUSTED_FIRMWARE=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_TARBALL=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/arm-trusted-firmware/sources-atf-v2.8-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_FIP=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_VARIABLES="USE_COHERENT_MEM=0 BL33=$(BINARIES_DIR)/armada_efi.fd"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_ADDITIONAL_DEPENDENCIES="uefi"
+#
+BR2_TARGET_BINARIES_MARVELL=y
+BR2_TARGET_BINARIES_MARVELL_CUSTOM_TARBALL=y
+BR2_TARGET_BINARIES_MARVELL_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/armada-firmware/sources-armada-firmware-10.1.0-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+#
+BR2_TARGET_UEFI=y
+#
+BR2_TARGET_MV_DDR_MARVELL=y
+BR2_TARGET_MV_DDR_MARVELL_CUSTOM_TARBALL=y
+BR2_TARGET_MV_DDR_MARVELL_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/mv-ddr-marvell/sources-mv_ddr-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+' ##
+fi
+
+frag_txt '#
+#
+BR2_TARGET_UEFI_PLATFORM="a80x0_mcbin"
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_ATF_24=y
+BR2_TARGET_ARM_TRUSTED_FIRMWARE_PLATFORM="a80x0_mcbin"
+BR2_TARGET_UBOOT_BUILD_SYSTEM_KCONFIG=y
+BR2_TARGET_UBOOT_BOARD_DEFCONFIG="mvebu_mcbin-88f8040"
+BR2_TARGET_UBOOT_CUSTOM_DTS_NAME="armada-8040-mcbin"
+BR2_LINUX_KERNEL_INTREE_DTS_NAME="marvell/armada-8040-mcbin"
+' ##
+
+#-------------------
+fi # !custom && is_armada

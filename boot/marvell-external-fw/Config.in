@@ -1,0 +1,961 @@
+config BR2_TARGET_MARVELL_EXTERNAL_FW
+	bool "Marvell External Firmware"
+	select BR2_PACKAGE_HOST_CMAKE
+	select BR2_PACKAGE_PYTHON_PYYAML
+	select BR2_PACKAGE_HOST_PYTHON_PYYAML
+	select BR2_PACKAGE_PYTHON_PYYAML_INCLUDE
+	select BR2_PACKAGE_PYTHON_PYCRYPTODOMEX
+	select BR2_PACKAGE_PYTHON_WEST
+	select BR2_PACKAGE_PYTHON_GIT
+	help
+	  Enable this option if you want to build the boot image
+	  using external SDK
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PLATFORM
+	string "platform"
+
+config BR2_MARVELL_EXTERNAL_FW_DEFS
+	string "definitions"
+
+choice
+	prompt "marvell-external-fw-version"
+	default BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_GIT
+	bool "Custom Git repository"
+	help
+	  Allows to specify custom repository for the component
+	  Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_TARBALL
+	bool "Release sources supplied as archives"
+	help
+	  Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_REPO_URL
+	string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by Git
+	  E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CUSTOM_TARBALL_LOCATION
+	string "Name of local archive file with release"
+
+endif
+
+choice
+	prompt "marvell-external-fw-atf-version"
+	default BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_GIT
+	bool "Custom Git repository"
+	help
+	  Allows to specify custom repository for the component
+	  Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_TARBALL
+	bool "Release sources supplied as archives"
+	help
+	  Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_REPO_URL
+	string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by Git
+	  E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ATF_CUSTOM_TARBALL_LOCATION
+	string "Name of local archive file with release"
+
+endif
+
+
+choice
+	prompt "marvell-external-fw-uboot-version"
+	default BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_GIT
+	bool "Custom Git repository"
+	help
+	  Allows to specify custom repository for the component
+	  Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_TARBALL
+	bool "Release sources supplied as archives"
+	help
+	  Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_REPO_URL
+	string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by Git
+	  E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UBOOT_CUSTOM_TARBALL_LOCATION
+	string "Name of local archive file with release"
+
+endif
+
+choice
+        prompt "marvell-external-fw-ecp-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT
+        bool "zephyr-project component"
+        help
+         Sources of zephyr project 
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT
+
+choice
+        prompt "marvell-external-fw-zephyr-project-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ZEPHYR_PROJECT_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+endif 
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS
+        bool "cmsis component"
+        help
+         Sources of cmsis project 
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS
+
+choice
+        prompt "marvell-external-fw-cmsis-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CMSIS_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+endif 
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL
+	bool "Ecp-hal component"
+	help
+	 Sources of Hal layer, addition to ECP sources
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL
+
+choice
+        prompt "marvell-external-fw-ecp_hal-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_ECP_HAL_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+endif
+
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP
+        bool "Pcp component"
+        help
+         Sources of PCP component for cn20k
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PCP
+
+
+choice
+        prompt "marvell-external-fw-pcp-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL
+        bool "Pcp-hal component"
+        help
+         Sources of Hal layer, addition to PCP sources
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL
+
+choice
+        prompt "marvell-external-fw-pcp_hal-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PCP_HAL_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK
+        bool "cs-sdk component"
+        help
+         Sources of cs-sdk layer, addition to cs sources
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK
+
+choice
+        prompt "marvell-external-fw-CS_SDK-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CS_SDK_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP
+        bool "pemep component"
+        help
+         Sources of pemep component
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP
+
+choice
+        prompt "marvell-external-fw-pemep-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+config BR2_ADDITIONAL_TOOLCHAIN_EXTERNAL_URL
+	string "Additional toolchain to compile pemep component"
+	help
+	  Allows to specify custom toolchain
+
+config BR2_ADDITIONAL_TOOLCHAIN_EXTERNAL_PATH
+	string "Additional toolchain to compile pemep component"
+	help
+	  Allows to specify custom toolchain
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PEMEP_CONFIG_FILE
+        string "Parameters passed to build command"
+        help
+         Location of PEM-EP CONFIG_FILE
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP
+        bool "libmctp component"
+        help
+          Sources of libmctp layer, addition to fw sources
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP
+
+choice
+        prompt "marvell-external-fw-LIBMCTP-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBMCTP_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+endif
+
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM
+        bool "libpldm component"
+        help
+          Sources of libpldm layer, addition to fw sources
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM
+
+choice
+        prompt "marvell-external-fw-LIBPLDM-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBPLDM_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+endif
+
+
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD
+        bool "mctpd component"
+        help
+          Sources of mctpd layer, addition to fw sources
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD
+
+choice
+        prompt "marvell-external-fw-MCTPD-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_GIT
+        bool "Custom Git repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCTPD_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+endif
+
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD
+        bool "pldmd component"
+        help
+          Sources of pldmd layer, addition to fw sources
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD
+
+choice
+        prompt "marvell-external-fw-PLDMD-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_GIT
+        bool "Custom Git repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PLDMD_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+endif
+
+choice
+        prompt "marvell-external-fw-mcp-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MCP_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+config BR2_MARVELL_EXTERNAL_FW_MCP_BUILD
+        bool "mcp build enable"
+        default n
+        help
+          Enable disable MCP Env
+
+choice
+        prompt "marvell-external-fw-libtim-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_LIBTIM_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+choice
+	prompt "marvell-external-fw-ebf-version"
+	default BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_GIT
+	bool "Custom Git repository"
+	help
+	  Allows to specify custom repository for the component
+	  Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_TARBALL
+	bool "Release sources supplied as archives"
+	help
+	  Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_REPO_URL
+	string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by Git
+	  E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_CUSTOM_TARBALL_LOCATION
+	string "Name of local archive file with release"
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_EBF_EXTRA_DTS_DIR
+	string "Path to directory with all extra board dts or board.c"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI
+        bool "Marvell uefi"
+        help
+          Enable this option if you want to build uefi image
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI
+
+choice
+        prompt "marvell-external-fw-uefi-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_SIGNED_CN10k
+        bool "Uefi cn10k signed builds"
+        default n
+        help
+          Uefi signed builds
+
+endif #IF UEFI SELECTED
+config BR2_TARGET_MARVELL_EXTERNAL_FW_CREATE_FIT_IMAGE
+        bool "Create FIT image"
+        default n
+        select BR2_PACKAGE_HOST_UBOOT_TOOLS
+        select BR2_PACKAGE_HOST_UBOOT_TOOLS_FIT_SUPPORT
+        select BR2_PACKAGE_HOST_UBOOT_TOOLS_FIT_SIGNATURE_SUPPORT
+        help
+          Create Flattened Image Tree file.
+          This option does not create any image files, but
+          creates a configuration file in the images directory
+          which is later used to create the actual .itb file
+          after filesystem image is created.
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_FIT_DIR
+        string "Directory contains FIT config file"
+        depends on BR2_TARGET_MARVELL_EXTERNAL_FW_CREATE_FIT_IMAGE
+        default "$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/fit/default"
+        help
+          This is the direcotry contains FIT config file(its) 
+          and signature key. Folder structure refer to 
+          board/marvell/fit/default
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_PIE_IMAGE
+	bool "Marvell PIE IMAGE"
+        help
+          Enable this option if you want PIE IMAGE
+
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_SIGNED_TRUSTED
+        bool "Marvell secure boot"
+        help
+          Enable this option if you want to use secure boot
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_SIGNED_ENCRYPTED
+	bool "Marvell secure boot, Encrypted Image"
+        help
+          Enable this option to generate ROT_KEY, and use secure
+	  encrypted boot
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_SIGNED_TRUSTED
+
+choice
+        prompt "marvell-external-fw-mbedtls-version"
+        default BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_GIT
+        bool "Custom Git repository"
+        help
+          Allows to specify custom repository for the component
+          Useful for developers building out of bleeding edge sources
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_TARBALL
+        bool "Release sources supplied as archives"
+        help
+          Use the package sources from local archive
+
+endchoice
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_GIT
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_REPO_URL
+        string "URL of custom repository"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_REPO_VERSION
+        string "Custom repository version"
+        help
+          Revision to use in the typical format used by Git
+          E.G. a sha id, a tag, branch, ..
+
+endif
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_TARBALL
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_MBEDTLS_CUSTOM_TARBALL_LOCATION
+        string "Name of local archive file with release"
+
+endif
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_SIGNED_TRUSTED_VARS
+	string "Parameters passed to build command"
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_IS_CN10k
+	bool "If it is cn10k soc"
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_IS_CN10k || BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_SIGNED_CN10k
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_KEY_DIR
+        string "KEY_DIR Parameter passed to build command"
+        help
+         Location of keys
+
+endif #IF CN10k SoC
+
+endif #IF SIGNED_TRUSTED SELECTED
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_SIGNED_ENCRYPTED
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_SSK
+	string "SSK parameter"
+	help
+         SSK parameter for signed-encrypted image
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_HUK
+        string "HUK parameter"
+        help
+         HUK parameter for signed-encrypted image
+
+endif #FW_SIGNED_TRUSTED
+
+if BR2_TARGET_MARVELL_EXTERNAL_FW_IS_CN10k || BR2_TARGET_MARVELL_EXTERNAL_FW_UEFI_SIGNED_CN10k || BR2_TARGET_MARVELL_EXTERNAL_FW_PIE_IMAGE
+
+config BR2_TARGET_MARVELL_EXTERNAL_FW_KEY_YAML_LOC
+        string "Parameters passed to build command"
+        help
+         Location of key_yaml_file
+endif
+
+endif #IF FW SELECTED

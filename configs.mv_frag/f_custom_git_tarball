@@ -1,0 +1,27 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_cusom_git_tarball>
+#
+# This file overwrites existing x_CUSTOM_GIT_, x_CUSTOM_TARBALL_LOCATION
+#
+
+#  if [[ $IS_DEVEL ]]; then
+#  #------IS_DEVEL------------------
+#  frag_txt '#
+#  BR2_PACKAGE_template_CUSTOM_REPO_URL="ssh://server:29418/IP/SW/project/template.git"
+#  BR2_PACKAGE_template_CUSTOM_REPO_VERSION="template branch name"
+#  ' ##
+#  #----IS_DEVEL--------------------
+#  fi # IS_DEVEL
+#
+#
+#  if [[ $IS_RELEASE ]]; then
+#  #------IS_RELEASE------------------
+#  frag_txt '#
+#  BR2_PACKAGE_template_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../extensions-sources-<template>-$(BR2_MARVELL_RELEASE_ID)/<template>/sources-<template>-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+#  ' ##
+#  #----IS_RELEASE--------------------
+#  fi # IS_RELEASE

@@ -1,0 +1,45 @@
+From 62ca956678b1bcfc2f23876aaf93e788ce2a9b11 Mon Sep 17 00:00:00 2001
+From: Tanmay Jagdale <tanmay@marvell.com>
+Date: Thu, 24 Sep 2020 14:49:19 +0530
+Subject: [PATCH 3/3] packages: opencsd: Update error message in script
+
+- When we don't find a trace address in the objdump provided
+  by the user we print 'No inst decode'. Update this print
+  to provide a more helpful message.
+
+- Also added logic to print this message once every 30 times of
+  it's occurrence.
+
+Signed-off-by: Tanmay Jagdale <tanmay@marvell.com>
+---
+ coresight-trace.py | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/coresight-trace.py b/coresight-trace.py
+index eb2f825..8349361 100755
+--- a/coresight-trace.py
++++ b/coresight-trace.py
+@@ -18,7 +18,7 @@ if not os.path.isfile(decoded_trace):
+ 	print("Cannot find decoded trace file at", decoded_trace)
+ 	sys.exit(1)
+ 
+-
++print_count = 0
+ inst_dict = {}
+ ire = re.compile(r"([0-9a-f]+):\s+(.*)")
+ ire_a = re.compile(r"\s+([0-9a-f]+):\s+(.*)")
+@@ -135,7 +135,10 @@ with open(decoded_trace) as dec_trace:
+ 			for c in m.group(2):
+ 				inst = inst_dict.get(last_inst, "unk")
+ 				if inst == "unk":
+-					print(c, " ", 'No Inst decode')
++					if ((print_count % 30) == 0):
++						print(c, " ", 'Set of Trace Addresses not part of objdump provided (include more objdump from kernel/userspace, ignoring')
++						print_count = 0
++					print_count += 1
+ 					continue
+ 				while not is_branch(inst):
+ 					print("I %016x: %s %s" % (last_inst, indent_str, inst))
+-- 
+2.25.1
+

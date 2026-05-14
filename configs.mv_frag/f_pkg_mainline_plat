@@ -1,0 +1,15 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_pkg_mainline_plat>
+#
+
+frag_txt_cr='#- Mainline packages enabled for specific Marvell-PLATFORM only'
+
+if [[ $is_armada3k ]]; then
+frag_txt_cr 'BR2_PACKAGE_HOST_ARM_GNU_RM_TOOLCHAIN=y'
+fi
+
+frag_txt_cr ''

@@ -1,0 +1,22 @@
+config BR2_PACKAGE_GATOR
+	bool "gator"
+	help
+	  This is Gator daemon, driver and related tools. A target agent (gator)
+	  is required to run on the Arm Linux target in order for Arm Streamline
+	  to operate.
+
+if BR2_PACKAGE_GATOR
+
+choice
+	prompt "libpmt-version"
+	default BR2_PACKAGE_GATOR_GIT
+
+config BR2_PACKAGE_GATOR_GIT
+	bool "Obtain package from the development GIT"
+
+endchoice
+
+config BR2_PACKAGE_GATOR_VERSION
+	string
+	default "7.7.0" if BR2_PACKAGE_GATOR_GIT
+endif

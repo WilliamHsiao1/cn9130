@@ -1,0 +1,106 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_mv_set>
+#
+
+frag_txt_cr "#--- Marvell packages ---"
+#
+
+#--- Common for all targets ---------------------
+frag_txt '#
+BR2_PACKAGE_TXCSR=n
+BR2_PACKAGE_GATOR=n
+BR2_PACKAGE_CPT_MICROCODE=n
+BR2_PACKAGE_MEMUTILS=n
+BR2_PACKAGE_TDM_UTILS=n
+' ##
+
+if [[ $IS_DEVEL ]]; then
+#------IS_DEVEL------------------
+frag_txt '#
+BR2_PACKAGE_TXCSR_GIT=n
+BR2_PACKAGE_GATOR_GIT=n
+BR2_PACKAGE_CPT_MICROCODE_GIT=n
+BR2_PACKAGE_MEMUTILS_GIT=n
+BR2_PACKAGE_TDM_UTILS_GIT=n
+' ##
+fi
+
+#--- OCTEONTX targets only ----------------------
+if [[ $is_octeontx_any ]]; then
+frag_txt '#
+# BR2_PACKAGE_CONFIG_CAVIUM_IPFWD_OFFLOAD is not set
+# BR2_PACKAGE_CAVIUM_XDP_IPFWD is not set
+# BR2_PACKAGE_BUILD_TEST is not set
+BR2_PACKAGE_OPENCSD=n
+' ##
+fi
+if [[ $is_octeontx_any ]] && [[ $IS_DEVEL ]]; then
+frag_txt '#
+# BR2_PACKAGE_CAVIUM_XDP_IPFWD_GIT is not set
+# BR2_PACKAGE_BUILD_TEST_GIT=y
+' ##
+fi
+
+
+if [[ $is_octeontx_any ]]; then
+frag_txt '#
+BR2_PACKAGE_LIBTMC=n
+BR2_PACKAGE_LIBPMT=n
+' ##
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_LIBTMC_GIT=n
+BR2_PACKAGE_LIBPMT_GIT=n
+' ##
+fi
+fi
+
+
+#--- ARMADA targets only ----------------------
+if [[ $is_armada ]] && [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_IS_FW=y
+BR2_PACKAGE_IS_FW_GIT=y
+BR2_PACKAGE_TDM_UTILS_VOICE_TOOL=y
+' ##
+fi
+if [[ $is_armada ]] && [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_PACKAGE_IS_FW=y
+# BR2_PACKAGE_IS_FW_GIT is not set
+BR2_PACKAGE_TDM_UTILS_VOICE_TOOL=y
+' ##
+fi
+
+##
+#--- MUSDK -----------------------
+#
+if [[ $is_armada_any ]]; then
+frag_txt '#
+BR2_PACKAGE_MUSDK_MARVELL=y
+BR2_PACKAGE_MUSDK_MARVELL_PP2=y
+# BR2_PACKAGE_MUSDK_MARVELL_PP2_LOCK is not set
+BR2_PACKAGE_MUSDK_MARVELL_NETA=y
+BR2_PACKAGE_MUSDK_MARVELL_SAM=y
+BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_APPLY=n
+BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_LINUX_4_14=y
+' ##
+if [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_GIT=y
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/accelerator-musdk.git"
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_REPO_VERSION="musdk-sdk12-devel"
+' ##
+fi
+if [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL=y
+BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL_LOCATION="$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/musdk-marvell/sources-musdk-marvell-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+' ##
+fi
+fi
+

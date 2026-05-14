@@ -1,0 +1,131 @@
+config BR2_PACKAGE_MUSDK_MARVELL
+	bool "musdk-marvell"
+	help
+	  Marvell User-Space SDK (MUSDK) is a light-weight user-space
+	  I/O driver for Marvell's Embedded Networking SoC's. The
+	  MUSDK library provides a simple and direct access to
+	  Marvell's SoC blocks to networking applications and
+	  networking infrastructure.
+
+if BR2_PACKAGE_MUSDK_MARVELL
+
+choice
+	prompt "musdk-marvell-source"
+
+config BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_GIT
+	bool "Custom Git repository"
+	help
+	  Allows to specify custom repository for the component
+	  Useful for developers building out of bleeding edge sources
+
+config BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL
+	bool "Release sources supplied as archives"
+	help
+	  Use the package sources from local archive
+
+endchoice
+
+if BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL
+
+config BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL_LOCATION
+	string "URL of custom musdk tarball"
+	depends on BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL
+
+endif
+
+if BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_GIT
+
+config BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_REPO_URL
+	string "Custom repository URL"
+
+config BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by
+	  Git E.G. a sha id, a tag, branch, ..
+
+endif
+
+config BR2_PACKAGE_MUSDK_MARVELL_VERSION
+	string
+	default BR2_MARVELL_RELEASE_ID if BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_TARBALL
+	default BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_REPO_VERSION if BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_GIT
+
+config BR2_PACKAGE_MUSDK_MARVELL_PP2
+	bool "pp2"
+	help
+	  Enable pp2 driver and applications build
+
+config BR2_PACKAGE_MUSDK_MARVELL_NMP
+        bool "nmp"
+        help
+          Enable nmp build
+
+config BR2_PACKAGE_MUSDK_MARVELL_GIU
+        bool "giu"
+        help
+          Enable giu driver build
+
+config BR2_PACKAGE_MUSDK_MARVELL_PP2_LOCK
+	bool "pp2 locking"
+	depends on BR2_PACKAGE_MUSDK_MARVELL_PP2
+	help
+	  Enable musdk pp2 driver HIF/TX locking
+
+config BR2_PACKAGE_MUSDK_MARVELL_NETA
+	bool "neta"
+	help
+	  Enable neta driver and applications build
+
+config BR2_PACKAGE_MUSDK_MARVELL_SAM
+	bool "sam"
+	help
+	  Enable musdk sam driver and application build
+
+config BR2_PACKAGE_MUSDK_MARVELL_CUSTOM_OPTS
+	string "custom options"
+	help
+	  Specify additional options that will be passed to musdk's
+	  configure script.
+
+config BR2_PACKAGE_MUSDK_MARVELL_FORCE_STATIC_EXAMPLES
+	bool "Force static compilation"
+	default y
+	help
+	  MUSDK applications achieve highest performance when they are compiled
+	  statically. If enabled, this flag will force MUSDK static library
+	  compilation and static linking of examples.
+
+if BR2_LINUX_KERNEL
+
+config BR2_LINUX_KERNEL_EXT_MUSDK_MARVELL
+	bool
+
+config BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_APPLY
+	bool "apply kernel patches"
+	select BR2_LINUX_KERNEL_EXT_MUSDK_MARVELL
+	help
+	  When this option is enabled, the musdk-marvell package will
+	  apply its own set of kernel patches. This may work if your
+	  kernel version is compatible with the patches provided by
+	  musdk-marvell. If not, then keep this option disabled, and
+	  make sure to add the relevant kernel patches separately.
+
+if BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_APPLY
+
+choice
+	prompt "kernel patch series"
+
+config BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_LINUX
+	bool "linux"
+
+config BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_LINUX_4_14
+	bool "linux-4.14"
+
+endchoice
+
+endif # BR2_PACKAGE_MUSDK_MARVELL_KERNEL_PATCHES_APPLY
+
+endif # BR2_LINUX_KERNEL
+
+endif # BR2_PACKAGE_MUSDK_MARVELL

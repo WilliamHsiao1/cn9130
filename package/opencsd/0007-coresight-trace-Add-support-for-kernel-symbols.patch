@@ -1,0 +1,271 @@
+From f49de02237ca36cb7435ad0b02b850fb892ca869 Mon Sep 17 00:00:00 2001
+From: Tanmay Jagdale <tanmay@marvell.com>
+Date: Mon, 17 Oct 2022 10:44:33 +0530
+Subject: [PATCH 7/7] coresight-trace: Add support for kernel symbols
+
+- Add support to match the given instruction to a function from the kernel
+  symbol tables file. If symbol isn't present, "Unknown" is printed.
+
+- Drop code that adds indentation at every branch
+
+- Add support to handle Exception (I_EXCEPT) packet for various types
+  of exceptions. The Exception packet is followed by an address packet
+  which points to the return address. So, print the Exception type and
+  return address for I_EXCEPT packets.
+
+- Add support to handle Address Context (I_ADDR_CTXT) packet.
+  Print the address and Exception Level that the packet contains.
+
+With all the above changes, a sample instruction trace for a system call
+would be as follows:
+NOTE: "Unknown" is printed for userspace symbols.
+
+...
+A          b'Unknown':     ffff8a0ecd40
+A          b'Unknown':           4259c0
+A          b'Unknown':     ffff8a0ee670
+A          b'Unknown':           425bac
+A          b'Unknown':     ffff89b107b0
+A          b'Unknown':     ffff89ae5348
+EXCEPTION        Call:     ffff89ae5364 -> Return Address
+C EL2         vectors: ffff800010082400
+E             vectors: ffff800010082400: 14000003 	b	ffff80001008240c <vectors+0x40c>
+I             vectors: ffff80001008240c: d10503ff 	sub	sp, sp, #0x140
+I             vectors: ffff800010082410: 8b2063ff 	add	sp, sp, x0
+I             vectors: ffff800010082414: cb2063e0 	sub	x0, sp, x0
+N             vectors: ffff800010082418: 37700080 	tbnz	w0, #14, ffff800010082428 <vectors+0x428>
+I             vectors: ffff80001008241c: cb2063e0 	sub	x0, sp, x0
+I             vectors: ffff800010082420: cb2063ff 	sub	sp, sp, x0
+E             vectors: ffff800010082424: 140003d7 	b	ffff800010083380 <el0_sync>
+I            el0_sync: ffff800010083380: a90007e0 	stp	x0, x1, [sp]
+I            el0_sync: ffff800010083384: a9010fe2 	stp	x2, x3, [sp, #16]
+I            el0_sync: ffff800010083388: a90217e4 	stp	x4, x5, [sp, #32]
+I            el0_sync: ffff800010083398: a90637ec 	stp	x12, x13, [sp, #96]
+...
+
+Signed-off-by: Tanmay Jagdale <tanmay@marvell.com>
+---
+ coresight-trace.py | 115 ++++++++++++++++++++++++++++-----------------
+ 1 file changed, 71 insertions(+), 44 deletions(-)
+
+diff --git a/coresight-trace.py b/coresight-trace.py
+index 8349361..c5bd5d7 100755
+--- a/coresight-trace.py
++++ b/coresight-trace.py
+@@ -6,9 +6,15 @@ import sys
+ import os
+ import getopt
+ import re
++from array import array
++from bisect import bisect
++from subprocess import Popen,PIPE
++from operator import itemgetter
++from collections import defaultdict
+ 
+ kerndis = sys.argv[1]
+ decoded_trace = sys.argv[2]
++kernsyms = sys.argv[3]
+ 
+ if not os.path.isfile(kerndis):
+ 	print("Cannot find disassembly file at", kerndis)
+@@ -18,11 +24,41 @@ if not os.path.isfile(decoded_trace):
+ 	print("Cannot find decoded trace file at", decoded_trace)
+ 	sys.exit(1)
+ 
+-print_count = 0
+ inst_dict = {}
+ ire = re.compile(r"([0-9a-f]+):\s+(.*)")
+ ire_a = re.compile(r"\s+([0-9a-f]+):\s+(.*)")
+ 
++addl = []
++detl = []
++# Read symbols and create sym table
++with open(kernsyms, "rt") as f:
++	for l in f:
++		a = l.split()
++		try:
++			addr = int(a[0],16)
++			sym = a[2]
++			# skip absolute symbols and add the rest
++			if a[1] == "A":
++				continue
++			# not ready for efi symbols yet
++			if addr < 0xffff00000000000:
++				continue
++			addl.append(addr)
++			detl.append(sym)
++		except ValueError:
++			pass
++
++print("Read", len(detl), "symbols from", kernsyms)
++
++# Match the address to a function and add it to function dictionary
++def addr_to_function_lookup(baddr):
++	pos = bisect(addl, baddr)
++	if (pos == 0):
++		fn = b'Unknown'
++	else:
++		fn = detl[pos-1]
++	return fn
++
+ def is_branch(inst):
+ 	inst = re.split(r"\s+|\.", inst, maxsplit=3)
+ 	return inst[1] in ("b", "bl", "blr", "br", "cbz", "cbnz", "ret", "tbz", "tbnz", "isb", "eret")
+@@ -38,11 +74,9 @@ def is_eret(inst):
+ def branch_info(inst):
+ 	ins = re.split(r"\s+", inst, maxsplit=5)
+ 	tgt = "0"
+-	indent = 0
+ 	unc = False
+ 	if ins[1] == "bl":
+ 		tgt = ins[2]
+-		indent = 1
+ 		unc = True
+ 	if ins[1] == "b":
+ 		tgt = ins[2]
+@@ -52,28 +86,18 @@ def branch_info(inst):
+ 	elif ins[1] in ("tbz", "tbnz"):
+ 		tgt = ins[4]
+ 	elif ins[1] == "blr":
+-		indent = 1
+ 		unc = True
+ 	elif ins[1] == "br":
+ 		unc = True
+ 	elif ins[1] == "ret":
+ 		unc = True
+-		indent = -1
+ 	else:	#b.cc
+ 		tgt = ins[2]
+-	return (unc, int(tgt, 16), indent)
++	return (unc, int(tgt, 16))
+ 
+ # Read dissassembly and create sym table
+-with open(kerndis) as f:
+-	i = 0
++with open(kerndis, "rt") as f:
+ 	for l in f:
+-		if i == 1000:
+-			sys.stdout.write('.')
+-			sys.stdout.flush()
+-			i = 0
+-		else:
+-			i += 1
+-
+ 		m = ire.match(l)
+ 		if not m:
+ 			m = ire_a.match(l)
+@@ -89,43 +113,52 @@ with open(kerndis) as f:
+ print("Read", len(inst_dict), "instructions from", kerndis)
+ 
+ # regular expressions for interesting trace entries
+-traddr_re = re.compile(r"Idx:[0-9]+; I_ADDR_L_64IS0 : Address, Long, 64 bit, IS0.; Addr=0x([0-9A-F]+);")
+-traddr_re1 = re.compile(r"Idx:[0-9]+; I_ADDR_L_32IS0 : Address, Long, 32 bit, IS0.; Addr=0x([0-9A-F]+);")
+-traddr_re2 = re.compile(r"Idx:[0-9]+; I_ADDR_S_IS0 : Address, Short, IS0.; Addr=0x([0-9A-F]+)")
+-traddr_re3 = re.compile(r"Idx:[0-9]+; I_ADDR_MATCH : Exact Address Match., \[[0-9]\]; Addr=0x([0-9A-F]+);")
+-
+-tratm_re  = re.compile(r"Idx:[0-9]+; I_ATOM_F[0-9] : Atom format ([0-9]).; ([NE]+)")
+-
++traddr_re	= re.compile(r"Idx:[0-9]+; I_ADDR_L_[36][24]IS0 : Address, Long, [36][24] bit, IS0.; Addr=0x([0-9A-F]+);")
++traddr_re2	= re.compile(r"Idx:[0-9]+; I_ADDR_S_IS0 : Address, Short, IS0.; Addr=0x([0-9A-F]+)")
++traddr_re3	= re.compile(r"Idx:[0-9]+; I_ADDR_MATCH : Exact Address Match., \[[0-9]\]; Addr=0x([0-9A-F]+);")
++trctx_re	= re.compile(r"Idx:[0-9]+; I_ADDR_CTXT_L_64IS0 : Address & Context, Long, 64 bit, IS0.; Addr=0x([0-9A-F]+); Ctxt: AArch64,EL([0-3]), NS;")
++tratm_re	= re.compile(r"Idx:[0-9]+; I_ATOM_F[0-9] : Atom format ([0-9]).; ([NE]+)")
++trexcept_re	= re.compile(r"Idx:[0-9]+; I_EXCEPT : Exception.;  ([A-Za-z ]+); Ret Addr Follows;")
+ 
+ # Walk through decoded trace file and find branch addresses
+ last_inst = 0
+-indent_level = 0
+-indent_str = ""
+ with open(decoded_trace) as dec_trace:
+ 	for l in dec_trace:
+-		m = traddr_re.match(l)
++		m = trexcept_re.match(l)
++		if m:
++			cause = m.group(1)
++			next_pkt = next(dec_trace)
++			raddrs = next_pkt.split("0x")
++			ret_addr = int(raddrs[1][0:16], 16)
++			print("EXCEPTION %16s: %16x -> Return Address" % (m.group(1), ret_addr))
++			continue
++		m = trctx_re.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+-			print("A %016x" % addr)
+ 			last_inst = addr
++			fname = addr_to_function_lookup(addr)
++			print("C EL%s %20s: %16x" % (m.group(2), fname, addr))
+ 			continue
+-		m = traddr_re1.match(l)
++		m = traddr_re.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+-			print("A %016x" % addr)
+ 			last_inst = addr
++			fname = addr_to_function_lookup(addr)
++			print("A %24s: %16x" % (fname, addr))
+ 			continue
+ 		m = traddr_re2.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+-			print("A %016x" % addr)
+ 			last_inst = addr
++			fname = addr_to_function_lookup(addr)
++			print("A %24s: %16x" % (fname, addr))
+ 			continue
+ 		m = traddr_re3.match(l)
+ 		if m:
+ 			addr = int(m.group(1), 16)
+-			print("A %016x" % addr)
+ 			last_inst = addr
++			fname = addr_to_function_lookup(addr)
++			print("A %24s: %16x" % (fname, addr))
+ 			continue
+ 		m = tratm_re.match(l)
+ 		if m:
+@@ -135,35 +168,29 @@ with open(decoded_trace) as dec_trace:
+ 			for c in m.group(2):
+ 				inst = inst_dict.get(last_inst, "unk")
+ 				if inst == "unk":
+-					if ((print_count % 30) == 0):
+-						print(c, " ", 'Set of Trace Addresses not part of objdump provided (include more objdump from kernel/userspace, ignoring')
+-						print_count = 0
+-					print_count += 1
+ 					continue
++				fname = addr_to_function_lookup(last_inst)
+ 				while not is_branch(inst):
+-					print("I %016x: %s %s" % (last_inst, indent_str, inst))
++					print("I %24s: %16x: %s" % (fname, last_inst, inst))
+ 					last_inst = last_inst + 4
+ 					inst = inst_dict.get(last_inst, "unk")
+ 				else:
++					fname = addr_to_function_lookup(last_inst)
+ 					if is_isb(inst):
+-						print("ISB %016x: %s %s" % (last_inst, indent_str, inst))
++						print("ISB %22s: %16x: %s" % (fname, last_inst, inst))
+ 						last_inst = last_inst + 4
+ 						inst = inst_dict.get(last_inst, "unk")
+ 						continue
+ 					if is_eret(inst):
+ 						# Address packet follows eret
+-						print("ERET %016x: %s %s" % (last_inst, indent_str, inst))
++						print("ERET %21s: %16x: %s" % (fname, last_inst, inst))
+ 						continue
+ 					else:
+-						(unc, taddr, ind) = branch_info(inst)
++						(unc, taddr) = branch_info(inst)
+ 						if c == 'E' or unc:
+-							print("E %016x: %s %s" % (last_inst, indent_str, inst))
++							print("E %24s: %16x: %s" % (fname, last_inst, inst))
+ 							last_inst = taddr
+ 						else:
+-							print("N %016x: %s %s" % (last_inst, indent_str, inst))
++							print("N %24s: %16x: %s" % (fname, last_inst, inst))
+ 							last_inst = last_inst + 4
+-						if (indent_level + ind > 0):
+-						    indent_level += ind
+-						    indent_str = indent_level * '>'
+-	
+ print("Done")
+-- 
+2.34.1
+

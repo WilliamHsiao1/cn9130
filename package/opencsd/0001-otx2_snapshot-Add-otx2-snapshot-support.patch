@@ -1,0 +1,333 @@
+From 9d66c4f599cea1686d47d8ce0f7ca7547f7ab581 Mon Sep 17 00:00:00 2001
+From: Bharat Bhushan <bbhushan2@marvell.com>
+Date: Thu, 16 Jan 2020 09:52:44 +0530
+Subject: [PATCH] otx2_snapshot: Add otx2 snapshot support
+
+Tweaked c_api_pkt_print_test to use otx2_snapshot.
+Also added the python script for program tracing
+
+Signed-off-by: Linu Cherian <lcherian@marvell.com>
+Signed-off-by: Bharat Bhushan <bbhushan2@marvell.com>
+---
+ coresight-trace.py                          | 163 ++++++++++++++++++++
+ decoder/tests/snapshots/otx2/cpu_0.ini      |  15 ++
+ decoder/tests/snapshots/otx2/device_6.ini   |  18 +++
+ decoder/tests/snapshots/otx2/snapshot.ini   |  10 ++
+ decoder/tests/snapshots/otx2/trace.ini      |  13 ++
+ decoder/tests/source/c_api_pkt_print_test.c |  17 +-
+ 6 files changed, 229 insertions(+), 7 deletions(-)
+ create mode 100755 coresight-trace.py
+ create mode 100644 decoder/tests/snapshots/otx2/cpu_0.ini
+ create mode 100644 decoder/tests/snapshots/otx2/device_6.ini
+ create mode 100644 decoder/tests/snapshots/otx2/snapshot.ini
+ create mode 100644 decoder/tests/snapshots/otx2/trace.ini
+
+diff --git a/coresight-trace.py b/coresight-trace.py
+new file mode 100755
+index 0000000..a96f92c
+--- /dev/null
++++ b/coresight-trace.py
+@@ -0,0 +1,163 @@
++#!/usr/bin/env python3
++#
++# Copyright 2019 Marvell.
++#
++import sys
++import os
++import getopt
++import re
++
++kerndis = sys.argv[1]
++decoded_trace = sys.argv[2]
++
++if not os.path.isfile(kerndis):
++	print("Cannot find disassembly file at", kerndis)
++	sys.exit(1)
++
++if not os.path.isfile(decoded_trace):
++	print("Cannot find decoded trace file at", decoded_trace)
++	sys.exit(1)
++
++
++inst_dict = {}
++ire = re.compile(r"([0-9a-f]+):\s+(.*)")
++
++def is_branch(inst):
++	inst = re.split(r"\s+|\.", inst, maxsplit=3)
++	return inst[1] in ("b", "bl", "blr", "br", "cbz", "cbnz", "ret", "tbz", "tbnz", "isb", "eret")
++
++def is_isb(inst):
++	inst = re.split(r"\s+|\.", inst, maxsplit=3)
++	return inst[1] in ("isb", "unk")
++
++def is_eret(inst):
++	inst = re.split(r"\s+|\.", inst, maxsplit=3)
++	return inst[1] in ("eret", "unk")
++
++def branch_info(inst):
++	ins = re.split(r"\s+", inst, maxsplit=5)
++	tgt = "0"
++	indent = 0
++	unc = False
++	if ins[1] == "bl":
++		tgt = ins[2]
++		indent = 1
++		unc = True
++	if ins[1] == "b":
++		tgt = ins[2]
++		unc = True
++	elif ins[1] in ("cbz", "cbnz"):
++		tgt = ins[3]
++	elif ins[1] in ("tbz", "tbnz"):
++		tgt = ins[4]
++	elif ins[1] == "blr":
++		indent = 1
++		unc = True
++	elif ins[1] == "br":
++		unc = True
++	elif ins[1] == "ret":
++		unc = True
++		indent = -1
++	else:	#b.cc
++		tgt = ins[2]
++	return (unc, int(tgt, 16), indent)
++
++# Read dissassembly and create sym table
++with open(kerndis) as f:
++	i = 0
++	for l in f:
++		if i == 1000:
++			sys.stdout.write('.')
++			sys.stdout.flush()
++			i = 0
++		else:
++			i += 1
++
++		m = ire.match(l)
++		if not m:
++			continue
++		try:
++			addr = int(m.group(1),16)
++			inst_dict[addr] = m.group(2)
++		except ValueError:
++			pass
++	sys.stdout.write('\n')
++
++print("Read", len(inst_dict), "instructions from", kerndis)
++
++# regular expressions for interesting trace entries
++traddr_re = re.compile(r"Idx:[0-9]+; I_ADDR_L_64IS0 : Address, Long, 64 bit, IS0.; Addr=0x([0-9A-F]+);")
++traddr_re1 = re.compile(r"Idx:[0-9]+; I_ADDR_L_32IS0 : Address, Long, 32 bit, IS0.; Addr=0x([0-9A-F]+);")
++traddr_re2 = re.compile(r"Idx:[0-9]+; I_ADDR_S_IS0 : Address, Short, IS0.; Addr=0x([0-9A-F]+)")
++traddr_re3 = re.compile(r"Idx:[0-9]+; I_ADDR_MATCH : Exact Address Match., \[[0-9]\]; Addr=0x([0-9A-F]+);")
++
++tratm_re  = re.compile(r"Idx:[0-9]+; I_ATOM_F[0-9] : Atom format ([0-9]).; ([NE]+)")
++
++
++# Walk through decoded trace file and find branch addresses
++last_inst = 0
++indent_level = 0
++indent_str = ""
++with open(decoded_trace) as dec_trace:
++	for l in dec_trace:
++		m = traddr_re.match(l)
++		if m:
++			addr = int(m.group(1), 16)
++			print("A %016x" % addr)
++			last_inst = addr
++			continue
++		m = traddr_re1.match(l)
++		if m:
++			addr = int(m.group(1), 16)
++			print("A %016x" % addr)
++			last_inst = addr
++			continue
++		m = traddr_re2.match(l)
++		if m:
++			addr = int(m.group(1), 16)
++			print("A %016x" % addr)
++			last_inst = addr
++			continue
++		m = traddr_re3.match(l)
++		if m:
++			addr = int(m.group(1), 16)
++			print("A %016x" % addr)
++			last_inst = addr
++			continue
++		m = tratm_re.match(l)
++		if m:
++			if last_inst == 0:
++				print("S -", m.group(2))
++				continue
++			for c in m.group(2):
++				inst = inst_dict.get(last_inst, "unk")
++				if inst == "unk":
++					print(c, " ", 'No Inst decode')
++					continue
++				while not is_branch(inst):
++					print("I %016x: %s %s" % (last_inst, indent_str, inst))
++					last_inst = last_inst + 4
++					inst = inst_dict.get(last_inst, "unk")
++				else:
++					if is_isb(inst):
++						print("ISB %016x: %s %s" % (last_inst, indent_str, inst))
++						last_inst = last_inst + 4
++						inst = inst_dict.get(last_inst, "unk")
++						continue
++					if is_eret(inst):
++						# Address packet follows eret
++						print("ERET %016x: %s %s" % (last_inst, indent_str, inst))
++						continue
++					else:
++						(unc, taddr, ind) = branch_info(inst)
++						if c == 'E' or unc:
++							print("E %016x: %s %s" % (last_inst, indent_str, inst))
++							last_inst = taddr
++						else:
++							print("N %016x: %s %s" % (last_inst, indent_str, inst))
++							last_inst = last_inst + 4
++						if (indent_level + ind > 0):
++						    indent_level += ind
++						    indent_str = indent_level * '>'
++	
++print("Done")
+diff --git a/decoder/tests/snapshots/otx2/cpu_0.ini b/decoder/tests/snapshots/otx2/cpu_0.ini
+new file mode 100644
+index 0000000..ad0244d
+--- /dev/null
++++ b/decoder/tests/snapshots/otx2/cpu_0.ini
+@@ -0,0 +1,15 @@
++[device]
++name=cpu_0
++class=core
++type=Cortex-A53
++
++[regs]
++PC(size:64)=0xFFFFFFC000081000
++SP(size:64)=0
++SCTLR_EL1=0x1007
++CPSR=0x1C5
++
++[dump1]
++file=kernel_dump.bin
++address=0xFFFFFFC000081000
++length=0x00050000
+diff --git a/decoder/tests/snapshots/otx2/device_6.ini b/decoder/tests/snapshots/otx2/device_6.ini
+new file mode 100644
+index 0000000..850a81a
+--- /dev/null
++++ b/decoder/tests/snapshots/otx2/device_6.ini
+@@ -0,0 +1,18 @@
++[device]
++name=ETM_0
++class=trace_source
++type=ETM4
++
++[regs]
++TRCCONFIGR(0x004)=0x00000001
++TRCTRACEIDR(0x010)=0x00000010
++TRCAUTHSTATUS(0x3EE)=0x000000CC
++TRCIDR0(0x078)=0x26000201
++TRCIDR1(0x079)=0x4300F430
++TRCIDR2(0x07A)=0x20001088
++TRCIDR8(0x060)=0x00000000
++TRCIDR9(0x061)=0x00000000
++TRCIDR10(0x062)=0x00000000
++TRCIDR11(0x063)=0x00000000
++TRCIDR12(0x064)=0x00000000
++TRCIDR13(0x065)=0x00000000
+diff --git a/decoder/tests/snapshots/otx2/snapshot.ini b/decoder/tests/snapshots/otx2/snapshot.ini
+new file mode 100644
+index 0000000..26965b5
+--- /dev/null
++++ b/decoder/tests/snapshots/otx2/snapshot.ini
+@@ -0,0 +1,10 @@
++[snapshot]
++version=1.0
++
++[device_list]
++device0=cpu_0.ini
++device6=device_6.ini
++
++
++[trace]
++metadata=trace.ini
+diff --git a/decoder/tests/snapshots/otx2/trace.ini b/decoder/tests/snapshots/otx2/trace.ini
+new file mode 100644
+index 0000000..24e0556
+--- /dev/null
++++ b/decoder/tests/snapshots/otx2/trace.ini
+@@ -0,0 +1,13 @@
++[trace_buffers]
++buffers=buffer0
++
++[buffer0]
++name=ETR_0
++file=cstrace.bin
++format=coresight
++
++[source_buffers]
++ETM_0=ETR_0
++
++[core_trace_sources]
++cpu_0=ETM_0
+diff --git a/decoder/tests/source/c_api_pkt_print_test.c b/decoder/tests/source/c_api_pkt_print_test.c
+index 02c589e..bfe2aec 100644
+--- a/decoder/tests/source/c_api_pkt_print_test.c
++++ b/decoder/tests/source/c_api_pkt_print_test.c
+@@ -67,8 +67,9 @@ const char *default_base_snapshot_path="..\\..\\..\\snapshots";
+ const char *juno_snapshot = "\\juno_r1_1\\";
+ const char *tc2_snapshot = "\\TC2\\";
+ #else
+-const char *default_base_snapshot_path = "../../snapshots";
++const char *default_base_snapshot_path = "../../../snapshots";
+ const char *juno_snapshot = "/juno_r1_1/";
++const char *otx2_snapshot = "/otx2/";
+ const char *tc2_snapshot = "/TC2/";
+ #endif
+ static const char *selected_snapshot;
+@@ -634,7 +635,7 @@ static ocsd_err_t create_decoder_etmv4(dcd_tree_handle_t dcd_tree_h)
+     trace_config.arch_ver   = ARCH_V8;
+     trace_config.core_prof  = profile_CortexA;
+ 
+-    trace_config.reg_configr    = 0x000000C1;
++    trace_config.reg_configr    = 0x00000001;
+     trace_config.reg_traceidr   = 0x00000010;   /* this is the trace ID -> 0x10, change this to analyse other streams in snapshot.*/
+ 
+     if(test_trc_id_override != 0)
+@@ -642,9 +643,9 @@ static ocsd_err_t create_decoder_etmv4(dcd_tree_handle_t dcd_tree_h)
+         trace_config.reg_traceidr = (uint32_t)test_trc_id_override;
+     }
+ 
+-    trace_config.reg_idr0   = 0x28000EA1;
+-    trace_config.reg_idr1   = 0x4100F403;
+-    trace_config.reg_idr2   = 0x00000488;
++    trace_config.reg_idr0   = 0x26000201;
++    trace_config.reg_idr1   = 0x4300F430;
++    trace_config.reg_idr2   = 0x20001088;
+     trace_config.reg_idr8   = 0x0;
+     trace_config.reg_idr9   = 0x0;
+     trace_config.reg_idr10  = 0x0;
+@@ -886,7 +887,7 @@ int process_trace_data(FILE *pf)
+     /*  Create a decode tree for this source data.
+         source data is frame formatted, memory aligned from an ETR (no frame syncs) so create tree accordingly 
+     */
+-    dcdtree_handle = ocsd_create_dcd_tree(OCSD_TRC_SRC_FRAME_FORMATTED, OCSD_DFRMTR_FRAME_MEM_ALIGN);
++    dcdtree_handle = ocsd_create_dcd_tree(OCSD_TRC_SRC_SINGLE, 0x0);
+ 
+     if(dcdtree_handle != C_API_INVALID_TREE_HANDLE)
+     {
+@@ -963,7 +964,9 @@ int main(int argc, char *argv[])
+     char message[512];
+ 
+     /* default to juno */
+-    selected_snapshot = juno_snapshot;
++    selected_snapshot = otx2_snapshot;
++
++    printf("Decoding otx2 snapshot ...\n");
+ 
+     /* command line params */
+     if(process_cmd_line(argc,argv) != 0)
+-- 
+2.17.1
+

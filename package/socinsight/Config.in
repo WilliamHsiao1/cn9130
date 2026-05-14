@@ -1,0 +1,83 @@
+config BR2_PACKAGE_SOCINSIGHT
+	bool "socinsight"
+	select BR2_PACKAGE_JANSSON
+	select BR2_PACKAGE_CUNIT
+	select BR2_PACKAGE_LIBUNWIND
+	select BR2_PACKAGE_LIBMICROHTTPD
+	help
+	  CNXK debug library
+
+if BR2_PACKAGE_SOCINSIGHT
+
+choice
+	prompt "socinsight Version"
+	help
+	  Select the specific socinsight version you want to use
+
+config BR2_PACKAGE_SOCINSIGHT_CUSTOM_GIT
+	bool "Custom Git repository"
+
+	help
+	  Force to specified Custom Git repository
+
+config BR2_PACKAGE_SOCINSIGHT_CUSTOM_ARCHIVE
+	bool "Custome archive"
+	help
+	  This option allows to specify a URL pointing to a socinsight
+	  source archive. This URL can use any protocol recognized by
+	  Buildroot, like http://, ftp://, file:// or scp://.
+
+	  When pointing to a local archive using file://, you may want
+	  to use a make variable like $(TOPDIR) to reference the root of
+	  the Buildroot tree.
+
+endchoice
+
+if BR2_PACKAGE_SOCINSIGHT_CUSTOM_GIT
+config BR2_PACKAGE_SOCINSIGHT_CUSTOM_REPO_URL
+	string "Custom repository URL"
+
+config BR2_PACKAGE_SOCINSIGHT_CUSTOM_REPO_VERSION
+	string "Custom repository version"
+	help
+	  Revision to use in the typical format used by Git,
+	  e.g. branch-name or hash-id.
+endif
+
+if BR2_PACKAGE_SOCINSIGHT_CUSTOM_ARCHIVE
+config BR2_PACKAGE_SOCINSIGHT_CUSTOM_ARCHIVE_LOCATION
+	string "URL of custom socinsight archive"
+	depends on BR2_PACKAGE_SOCINSIGHT_CUSTOM_ARCHIVE
+endif
+
+
+choice
+	prompt "Target Platform"
+	help
+	  Choose platform for which to build and install socinsight library and
+	  examples.
+
+
+config BR2_PACKAGE_SOCINSIGHT_PLATFORM_CN10K
+	bool "cn10k"
+	help
+	  For CN10K SoC family and using ONA blocks.
+
+config BR2_PACKAGE_SOCINSIGHT_PLATFORM_CN9K
+	bool "cn9k"
+	help
+	  For CN9XX SoC family and using ONA blocks.
+
+endchoice
+
+config BR2_PACKAGE_SOCINSIGHT_PLATFORM
+	string
+	default "cn10k" if BR2_PACKAGE_SOCINSIGHT_PLATFORM_CN10K
+	default "cn9k" if BR2_PACKAGE_SOCINSIGHT_PLATFORM_CN9K
+
+config BR2_PACKAGE_SOCINSIGHT_VERSION
+        string
+        default BR2_PACKAGE_SOCINSIGHT_CUSTOM_REPO_VERSION if BR2_PACKAGE_SOCINSIGHT_CUSTOM_GIT
+        default BR2_MARVELL_RELEASE_ID if BR2_PACKAGE_SOCINSIGHT_CUSTOM_ARCHIVE
+
+endif

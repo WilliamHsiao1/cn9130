@@ -1,0 +1,27 @@
+.. _buildroot_output:
+
+Buildroot output folder content
+===============================
+
+::
+
+	images
+	├── asim...............................ASIM folder
+	├── boot.vfat..........................Intermediate flash image -
+	|                                      see board/marvell/genimage.cfg for details
+	├── ${PLAT}_asim_marvell_cn10k_release_defconfig........Buildroot configuration
+	├── compile.sh-command.................Full compile command and executed directory
+	├── flash-${PLAT}.img..................Firmware binary image
+	├── hdimage.img........................Hard Disk image for SoC simulator
+	├── Image..............................Linux kernel image
+	├── rootfs.ext2........................Intermediate flash image -
+	|                                      see board/marvell/genimage.cfg for details
+	├── rootfs.ext4........................Intermediate flash image -
+	|                                      see board/marvell/genimage.cfg for details
+	├── rootfs.tar.........................Target Root file system in flat format
+	├── scp_bl0.exe-${PLAT}................SCP BL0 BootROM binary image
+	└── uEnv.txt...........................Example of boot loader arguments and boot command
+
+.. note::
+
+   **${PLAT}** is cn10ka/cnf10ka/cnf10kb depending on the platform

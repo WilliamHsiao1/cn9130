@@ -1,0 +1,40 @@
+From 5ddcc5216b16916b79e303dd2ba5f67c2ed51fa6 Mon Sep 17 00:00:00 2001
+From: Bharat Bhushan <bbhushan2@marvell.com>
+Date: Thu, 13 Feb 2020 15:33:56 +0530
+Subject: [PATCH 2/2] packages: opencsd - Fix trace decode for spaces in disasm
+
+Current trace decode script assumes no spaces in objdump file
+but objdump generated from application executables have some
+spaces before dis-asm instruction
+
+Signed-off-by: Bharat Bhushan <bbhushan2@marvell.com>
+---
+ coresight-trace.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/coresight-trace.py b/coresight-trace.py
+index a96f92c..eb2f825 100755
+--- a/coresight-trace.py
++++ b/coresight-trace.py
+@@ -21,6 +21,7 @@ if not os.path.isfile(decoded_trace):
+ 
+ inst_dict = {}
+ ire = re.compile(r"([0-9a-f]+):\s+(.*)")
++ire_a = re.compile(r"\s+([0-9a-f]+):\s+(.*)")
+ 
+ def is_branch(inst):
+ 	inst = re.split(r"\s+|\.", inst, maxsplit=3)
+@@ -75,7 +76,9 @@ with open(kerndis) as f:
+ 
+ 		m = ire.match(l)
+ 		if not m:
+-			continue
++			m = ire_a.match(l)
++			if not m:
++				continue
+ 		try:
+ 			addr = int(m.group(1),16)
+ 			inst_dict[addr] = m.group(2)
+-- 
+2.17.1
+

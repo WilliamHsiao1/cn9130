@@ -1,0 +1,42 @@
+From 541888264092bc8768ff20b4777ff5bf2364de57 Mon Sep 17 00:00:00 2001
+From: Tanmay Jagdale <tanmay@marvell.com>
+Date: Thu, 23 Mar 2023 07:09:44 +0530
+Subject: [PATCH 9/9] coresight-trace: Handle no timestamps in trace
+
+If user did not enable timestamps while capturing Coresight trace,
+then hardware won't generate I_TIMESTAMP packets. Hence, add a check
+to see if timestamp packet count is non-zero. If zero, then don't
+display any timestamps in instruction trace.
+
+Signed-off-by: Tanmay Jagdale <tanmay@marvell.com>
+---
+ coresight-trace.py | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/coresight-trace.py b/coresight-trace.py
+index ce80c87..af11e07 100755
+--- a/coresight-trace.py
++++ b/coresight-trace.py
+@@ -135,7 +135,9 @@ last_inst = 0
+ # The Timestamp packet is generated after a P0 Element.
+ # Hence read the FIRST timestamp value from tlist ahead
+ # of the actual instruction tracing.
+-timestp = int(tlist[0], 16)
++timestp = 0
++if (tlist_len > 0):
++	timestp = int(tlist[0], 16)
+ ts_cnt = 0
+ ts_val = ""
+ 
+@@ -158,7 +160,7 @@ with open(decoded_trace) as dec_trace:
+ 		m = trtimestamp_re.match(l)
+ 		if m:
+ 			ts_cnt = ts_cnt + 1
+-			if (ts_cnt == tlist_len):
++			if (ts_cnt >= tlist_len):
+ 				continue
+ 			timestp = int(tlist[ts_cnt],16)
+ 			ts_val = str(timestp/1000000000)
+-- 
+2.34.1
+

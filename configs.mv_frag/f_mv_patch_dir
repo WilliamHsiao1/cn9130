@@ -1,0 +1,25 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_pkg_mv_patch_dir>
+#
+
+if [[ $is_octeontx_any ]]; then
+frag_txt_cr '#-
+BR2_GLOBAL_PATCH_DIR="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/patches/octeontx-patches"
+' ##
+fi
+
+if [[ ! $is_octeontx_any ]] && [[ ! $is_armada_any ]]; then
+frag_txt_cr '#-
+BR2_GLOBAL_PATCH_DIR="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/patches"
+' ##
+fi
+
+if [[ $is_armada_any ]]; then
+frag_txt_cr '#-
+BR2_GLOBAL_PATCH_DIR="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/patches $(BR2_EXTERNAL_MARVELL_SDK_PATH)/patches/armada"
+' ##
+fi

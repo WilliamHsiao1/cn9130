@@ -1,0 +1,12 @@
+config BR2_PACKAGE_HOST_ASIM
+	bool "ASIM scripts"
+	help
+	  Scripts to run ASIM, Simulator for ARM Architecture v8 (64-bit)
+	  For Marvell processors
+
+if BR2_PACKAGE_HOST_ASIM
+
+config BR2_ASIM_GIT
+	bool "Obtain ASIM from GIT"
+
+endif

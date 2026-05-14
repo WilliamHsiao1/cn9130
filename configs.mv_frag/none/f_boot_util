@@ -1,0 +1,27 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_boot_util>
+#
+
+if [[ $is_octeontx_any ]]; then
+frag_txt '#
+BR2_PACKAGE_MBEDTLS=n
+BR2_PACKAGE_MBEDTLS_INSTALL_SOURCES_STAGING=n
+' ##
+fi
+if [[ $is_octeontx_any ]] && [[ $IS_DEVEL ]]; then
+frag_txt '#
+BR2_PACKAGE_MBEDTLS_CUSTOM_GIT=y
+BR2_PACKAGE_MBEDTLS_CUSTOM_GIT_REPO_URL="https://github.com/Marvell-Lab/base-mbedtls.git"
+BR2_PACKAGE_MBEDTLS_CUSTOM_GIT_REPO_VERSION="mbedtls-devel"
+' ##
+fi
+if [[ $is_octeontx_any ]] && [[ $IS_RELEASE ]]; then
+frag_txt '#
+BR2_PACKAGE_MBEDTLS_CUSTOM_TARBALL=y
+BR2_PACKAGE_MBEDTLS_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/mbedtls/sources-mbedtls-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+' ##
+fi

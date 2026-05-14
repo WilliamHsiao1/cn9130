@@ -1,0 +1,103 @@
+/* Cavium Thunder flattened image tree source
+ *
+ * SPDX-License-Identifier:           BSD-3-Clause
+ * https://spdx.org/licenses
+ * Copyright (c) 2017 Marvell.
+ */
+
+/dts-v1/;
+
+/ {
+	description = "Image for Cavium OcteonTX with Linux Kernel and ramdisk";
+	#address-cells = <1>;
+
+	images {
+		/* kernel@1 is the name of the first and only kernel in this
+		 * image.
+		 */
+		kernel@1 {
+			/* Description for this kernel */
+			description = "Cavium OcteonTX/Thunder Linux Kernel";
+
+			/* Location of the kernel image to be used for "kernel@1" */
+			data = /incbin/("../../linux/kernel/linux/arch/arm64/boot/Image");
+
+			/* Type of image, must be "kernel" */
+			type = "kernel";
+
+			/* Architecture, must be "arm64"" */
+			arch = "arm64";
+
+			/* operating system, must be "linux" */
+			os = "linux";
+
+			/* Type of compression used, for zImage set to none.
+			 * If compressed to gzip so it is zImage.gz then set
+			 * to gzip.
+			 */
+			compression = "none";
+
+			/* Load address for the kernel, this must be set to
+			 * $kernel_addr
+			 */
+			load = <0x40080000>;
+
+			/* entry address, currently the same as the load address
+			 */
+			entry = <0x40080000>;
+
+			/* First hash used to verify the integrity of the image.
+			 *
+			 * Multiple hash types can be used by adding sections
+			 * hash@2, etc.
+			 */
+			hash@1 {
+				/* Algorithm used to verify the image integrity.
+				 * This can be crc32, md5, sha1 or sha256.
+				 */
+				algo = "sha256";
+			};
+			/* signature section for signing the kernel image
+			 *
+			 * Multiple signatures can be added, i.e. signature@1,
+			 * signature@2, etc.  As long as one matches the kernel
+			 * will be authenticated.
+			 */
+			signature@1 {
+				/* Signature algorithm */
+				algo = "sha256,rsa2048";
+
+				/* Name of key file to use, i.e.
+				 * dev.crt and dev.key
+				 */
+				key-name-hint = "dev";
+			};
+		};
+	};
+	configurations {
+		/* default configuration to use if not specified */
+		default = "config@1";
+
+		/* First configuration */
+		config@1 {
+			/* configuration for a particular kernel and root
+			 * filesystem pair.
+			 */
+			description = "OcteonTX/Thunder Linux configuration";
+
+			/* kernel image to use */
+			kernel = "kernel@1";
+
+			/* First signature of configuration for development */
+			signature@1 {
+				/* signature algorithm to use for configuration
+				 */
+				algo = "sha256,rsa2048";
+				/* signature key filename */
+				key-name-hint = "dev";
+				/* images that are signed */
+				sign-images = "kernel";
+			};
+		};
+	};
+};

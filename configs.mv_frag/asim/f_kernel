@@ -1,0 +1,22 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_kernel>
+#
+
+source ${base_frag_path}/f_kernel
+
+if [[ $is_octeontx2 ]] || [[ $is_cn10k ]]; then
+frag_txt '#
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/marvell_v8_octeon_kernel_asim.config"
+' ##
+fi
+
+if [[ $is_cn20k ]]; then
+frag_txt '
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/nemo_tmp/nemo_kernel.config"
+' ##
+fi
+

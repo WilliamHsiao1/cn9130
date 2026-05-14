@@ -1,0 +1,2 @@
+bootargs=console=ttyAMA0,115200n8 earlycon=pl011,0x87e028000000 maxcpus=24 rootwait rw root=/dev/mmcblk0p2 coherent_pool=16M
+bootcmd=fatload mmc 0:1  $loadaddr Image ;  booti $loadaddr - $fdtcontroladdr

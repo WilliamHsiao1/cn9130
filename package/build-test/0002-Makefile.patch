@@ -1,0 +1,10 @@
+diff --git a/Makefile b/Makefile
+index 5eafc13..85c42c0 100644
+--- a/linux/cavium-rootfs/source/build-test/Makefile
++++ b/linux/cavium-rootfs/source/build-test/Makefile
+@@ -1,5 +1,3 @@
+-CROSS=aarch64-thunderx-linux-gnu-
+-
+ # Make list of all cpp files
+ HOST_H=${shell find . -name "*.h"}
+ HOST_CPP=${shell find . -name "*.cpp"}

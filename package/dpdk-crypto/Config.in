@@ -1,0 +1,11 @@
+config BR2_PACKAGE_DPDK_CRYPTO
+	bool "dpdk-crypto"
+	help
+	  DPDK crypto library
+
+if BR2_PACKAGE_DPDK_CRYPTO
+
+config BR2_PACKAGE_DPDK_CRYPTO_GIT
+	bool "Obtain dpdk crypto from GIT"
+
+endif

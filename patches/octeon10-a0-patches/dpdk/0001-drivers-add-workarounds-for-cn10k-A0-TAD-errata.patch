@@ -1,0 +1,116 @@
+From 86e1ad2619016d905d72d619598167b25ff915cd Mon Sep 17 00:00:00 2001
+From: Ashwin Sekhar T K <asekhar@marvell.com>
+Date: Thu, 27 Jan 2022 15:40:14 +0530
+Subject: [PATCH] drivers: add workarounds for cn10k A0 TAD errata
+
+Add workarounds for cn10k A0 TAD errata.
+
+Signed-off-by: Ashwin Sekhar T K <asekhar@marvell.com>
+Change-Id: Ieb1e74e4aedac695fbdb441e1f900e8423c0e525
+---
+ drivers/event/cnxk/cn10k_worker.h   |  3 ++-
+ lib/eal/arm/include/rte_atomic_64.h | 19 ++++++++++---------
+ lib/eal/arm/include/rte_pause_64.h  |  4 ++++
+ 3 files changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/event/cnxk/cn10k_worker.h b/drivers/event/cnxk/cn10k_worker.h
+index daa72e881c..ef52616d8d 100644
+--- a/drivers/event/cnxk/cn10k_worker.h
++++ b/drivers/event/cnxk/cn10k_worker.h
+@@ -290,10 +290,11 @@ cn10k_sso_hws_get_work_empty(struct cn10k_sso_hws *ws, struct rte_event *ev,
+ 		     ".Lrty%=:	wfe					\n"
+ 		     "		ldp %[tag], %[wqp], [%[tag_loc]]	\n"
+ 		     "		tbnz %[tag], 63, .Lrty%=		\n"
+-		     ".Ldone%=:	dmb ld					\n"
++		     ".Ldone%=:						\n"
+ 		     : [tag] "=&r"(gw.u64[0]), [wqp] "=&r"(gw.u64[1])
+ 		     : [tag_loc] "r"(ws->base + SSOW_LF_GWS_WQE0)
+ 		     : "memory");
++	rte_rmb();
+ #else
+ 	do {
+ 		roc_load_pair(gw.u64[0], gw.u64[1],
+diff --git a/lib/eal/arm/include/rte_atomic_64.h b/lib/eal/arm/include/rte_atomic_64.h
+index fa6f334c0d..7eb287e868 100644
+--- a/lib/eal/arm/include/rte_atomic_64.h
++++ b/lib/eal/arm/include/rte_atomic_64.h
+@@ -19,23 +19,23 @@ extern "C" {
+ #include <rte_compat.h>
+ #include <rte_debug.h>
+ 
+-#define rte_mb() asm volatile("dmb osh" : : : "memory")
++#define rte_mb() __atomic_thread_fence(__ATOMIC_ACQ_REL)
+ 
+-#define rte_wmb() asm volatile("dmb oshst" : : : "memory")
++#define rte_wmb() __atomic_thread_fence(__ATOMIC_RELEASE)
+ 
+-#define rte_rmb() asm volatile("dmb oshld" : : : "memory")
++#define rte_rmb() __atomic_thread_fence(__ATOMIC_ACQUIRE)
+ 
+-#define rte_smp_mb() asm volatile("dmb ish" : : : "memory")
++#define rte_smp_mb() rte_mb()
+ 
+-#define rte_smp_wmb() asm volatile("dmb ishst" : : : "memory")
++#define rte_smp_wmb() rte_wmb()
+ 
+-#define rte_smp_rmb() asm volatile("dmb ishld" : : : "memory")
++#define rte_smp_rmb() rte_rmb()
+ 
+-#define rte_io_mb() rte_mb()
++#define rte_io_mb() asm volatile("dmb osh" : : : "memory")
+ 
+-#define rte_io_wmb() rte_wmb()
++#define rte_io_wmb() asm volatile("dmb oshst" : : : "memory")
+ 
+-#define rte_io_rmb() rte_rmb()
++#define rte_io_rmb() asm volatile("dmb oshld" : : : "memory")
+ 
+ static __rte_always_inline void
+ rte_atomic_thread_fence(int memorder)
+@@ -73,6 +73,7 @@ cas_op_name(rte_int128_t *dst, rte_int128_t *old, rte_int128_t updated)     \
+ 		[upd1] "r" (x3),                                            \
+ 		[dst] "r" (dst)                                             \
+ 		: "memory");                                                \
++	rte_mb();                                                           \
+ 	old->val[0] = x0;                                                   \
+ 	old->val[1] = x1;                                                   \
+ }
+diff --git a/lib/eal/arm/include/rte_pause_64.h b/lib/eal/arm/include/rte_pause_64.h
+index fe4d42b1ea..37280fb047 100644
+--- a/lib/eal/arm/include/rte_pause_64.h
++++ b/lib/eal/arm/include/rte_pause_64.h
+@@ -44,6 +44,7 @@ static inline void rte_pause(void)
+ 			: [addr] "r" (src)                \
+ 			: "memory");                      \
+ 	} else {                                          \
++		rte_rmb();                                \
+ 		asm volatile("ldaxrh %w[tmp], [%x[addr]]" \
+ 			: [tmp] "=&r" (dst)               \
+ 			: [addr] "r" (src)                \
+@@ -63,6 +64,7 @@ static inline void rte_pause(void)
+ 			: [addr] "r" (src)               \
+ 			: "memory");                     \
+ 	} else {                                         \
++		rte_rmb();                               \
+ 		asm volatile("ldaxr %w[tmp], [%x[addr]]" \
+ 			: [tmp] "=&r" (dst)              \
+ 			: [addr] "r" (src)               \
+@@ -82,6 +84,7 @@ static inline void rte_pause(void)
+ 			: [addr] "r" (src)               \
+ 			: "memory");                     \
+ 	} else {                                         \
++		rte_rmb();                               \
+ 		asm volatile("ldaxr %x[tmp], [%x[addr]]" \
+ 			: [tmp] "=&r" (dst)              \
+ 			: [addr] "r" (src)               \
+@@ -103,6 +106,7 @@ static inline void rte_pause(void)
+ 			: [addr] "r" (src)                              \
+ 			: "memory");                                    \
+ 	} else {                                                        \
++		rte_rmb();                                              \
+ 		asm volatile("ldaxp %x[tmp0], %x[tmp1], [%x[addr]]"     \
+ 			: [tmp0] "=&r" (dst_128->val[0]),               \
+ 			  [tmp1] "=&r" (dst_128->val[1])                \
+-- 
+2.17.1
+

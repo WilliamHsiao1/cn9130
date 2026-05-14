@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# f_host_welcome_id_msg
+# f_gcc_mcpu          - gcc -mcpu type, different for armada..octeon
+# f_gcc_toolchain     - Marvell-toolchain and GLIBC-geader definition
+# f_kernel            - LINUX_KERNEL
+# f_pkg_mainline_0    -  set0 of Mainline package, empty, reserved for customer's overriding.
+# f_pkg_mainline_1    -  set1   basic/minimal rootfs configuration but with Networking.
+# f_pkg_mainline_2_bm -  frag2, set(1+2) optimized for Kernel Network Benchmark (BM).
+# f_pkg_mainline_3_ext - frag3, set(1+2+3) containing Netfilter, IPSEC, tools...
+# f_pkg_mainline_4_qa -  frag4, set(1+2+3+4) used for QA
+#                        default set=(1+2+3+4), to change it use CI compile.sh option "-n"
+# f_pkg_mainline_custom - frag reserved for customer's extensions, always included.
+# f_pkg_mainline_plat - Mainline sub-set on a per-platform basis
+# f_mv_set            - Marvell Packages set
+# f_mv_set_dpdk       - Marvell DPDK
+# f_mv_set_odp        - Marvell ODP
+# f_mv_set_socinsight  - Marvell SOCINSIGHT
+# f_mv_set_libcnxk-debug  - Marvell LIBCNXK-DEBUG
+# f_mv_patch_dir      - Path to patch-direcory/directories
+# f_mv_set_ext1/2..N  - Marvell extension for customer-colutions
+#    Boot/ATF/Uboot/BDK boot-image
+# f_boot_armada       - for a given Platform&&BoardTarget (Armada)
+# f_boot_armada3k     - for a given Platform&&BoardTarget (Armada3k)
+# f_boot_octeontx2    - for a given Platform&&BoardTarget (Octeon-TX2/TX1)
+# f_boot_cn10k        - for a given Platform&&BoardTarget (cn10x)
+# f_boot_custom_board - for a given Platform with and CUSTOM board defined
+# f_tag               - special logic to handle TAG requests from compile.sh
+# f_custom_git_tarball - x_CUSTOM_GIT, x_CUSTOM_TARBALL overriding
+# f_last_overwrite    - last and ultimate overwrite capability
+
+source f_host_welcome_id_msg
+source f_gcc_mcpu
+source f_gcc_toolchain
+source f_kernel
+source f_pkg_mainline_1
+source f_pkg_mainline_2_bm
+source f_pkg_mainline_3_ext
+source f_pkg_mainline_4_qa
+source f_pkg_mainline_custom
+source f_pkg_mainline_plat
+source f_pkg_mainline_host
+source f_mv_set
+source f_mv_set_dpdk
+source f_mv_set_spdk
+source f_mv_set_odp
+source f_mv_patch_dir
+source f_mv_set_ext1
+source f_mv_set_ext2
+source f_mv_set_ext3
+source f_mv_set_ext4
+source f_mv_set_ext5
+source f_mv_set_ext6
+source f_mv_set_bphy_app
+if [ ! ${boot_none} ]; then
+source f_boot_cn10k
+#source f_boot_octeontx2
+source f_boot_armada
+#source f_boot_armada3k
+source f_boot_custom_board
+fi
+source f_tag
+source f_custom_git_tarball
+source f_last_overwrite

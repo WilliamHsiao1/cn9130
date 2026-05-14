@@ -1,0 +1,31 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_mv_set_ext4>
+#
+
+# frag_txt '#
+# BR2_customer_config COMMON for DEVEL&RELEASE
+# ' ##
+
+
+if [[ $IS_DEVEL ]]; then
+#------IS_DEVEL------------------
+# frag_txt '#
+# BR2_customer_config DEVEL
+# ' ##
+echo "" > /dev/null
+#----IS_DEVEL--------------------
+fi # IS_DEVEL
+
+
+if [[ $IS_RELEASE ]]; then
+#------IS_RELEASE------------------
+# frag_txt '#
+# BR2_customer_config RELEASE
+# ' ##
+echo "" > /dev/null
+#----IS_RELEASE--------------------
+fi # IS_RELEASE

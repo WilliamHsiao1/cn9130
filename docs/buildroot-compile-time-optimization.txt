@@ -1,0 +1,171 @@
+Compile-time optimization
+=========================
+Buildroot process takes a lot of time (hours). So compile-time optimization
+is important.
+
+- :ref:`sdk_cache`
+- :ref:`ccache`
+
+.. _sdk_cache:
+
+Marvell SDK-cache
+-----------------
+There is an optimization method designed for Marvell CI release builds
+called **SDK-cache**. It caches pre-downloaded and pre-compiled packages
+that are unlikely to change from one build to the next.
+
+Since the SDK-cache is more than 85% of a real target build, the compile-time
+of a real target build can be reduced by more than 85%.
+
+The SDK-cache approach is based on the following:
+
+- The SDK-cache build-output is like the Marvell-SDK, but without Marvell-specific packages,
+  Kernel and Bootloader.
+- The SDK-cache is a subset of packages common for all build targets.
+- The SDK-cache is a "target build" which merely should be compiled separately.
+- The built SDK-cache (including config, object, output and intermediate files)
+  is then re-used for a "real" target build.
+- The SDK-cache environment includes all the downloaded packages inside.
+- A real target build incrementally adds its own packages to the pre-built
+  SDK-cache environment and is compiled within this environment.
+
+.. Note::
+
+ SDK-cache should be built for every SoC-family. So there are 3 types of SDK-caches:
+
+ - otx2  (octeontx/otx uses the same otx2 cache)
+ - armada
+ - armada3
+
+SDK-cache Limitations
+~~~~~~~~~~~~~~~~~~~~~
+Buildroot's config, object, output and intermediate files have FULL-PATH and User
+information built in. The output directory is also built-in, so all builds (cache and others)
+should be built into the same folder named "output".
+
+This means that the SDK-cache pre-built in such environment could be used for
+other builds only under the same user and the same path.
+
+The Marvell CI Nightly Automation Build is running under user "jenkins" under path
+</home/jenkins/workspace/nightly-devel>. It also runs inside the Docker-container and
+therefore it satisfies these requirements.
+
+However, a user working with a shareable Build-Server cannot use the SDK-cache
+in a simple way.
+
+
+How to create and use the SDK-cache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Build cache. Example for OcteonTX2 SoC family::
+
+	$ export MV_BLDR=/home/jenkins/workspace/nightly-devel
+	$ cd sdk-base
+	$ ./scripts/ci/compile.sh custom_otx2 -s
+
+ The result of this build is a file $MV_BLDR/sdk_cache-otx2-7ba40650.tar.
+ Where:
+
+  - "custom" is board-type without any boot-defconfig editing in compile.sh,
+  - "otx2" is SoC-family (either of otx2, armada, armada3),
+  - "-s" option requesting SDK-cache build,
+  - <7ba40650> is SDK-cache defconfig unique ID (see below).
+
+.. Note::
+
+   If you are using a release build or an SDK extension, you will need to
+   force the build to use the default output directory. For example::
+
+     $ ./scripts/ci/compile-sh cn96xx -d -r SDK-10.3.2.0-PR6 -s
+
+2. Copy the "sdk_cache-otx2-7ba40650.tar" to a folder for further re-use
+   by other builds. ::
+
+     $ cp ../sdk_cache-otx2-7ba40650.tar /path/to/my-saved-caches
+
+3. For a new build, the cache can be copied into your new installation
+   directory (MV_BLDR) to speed up the build time. Follow the steps in
+   :ref:`building_development_images` until you are ready to compile. Then, ::
+
+     $ cp /path/to/my-saved-caches/sdk_cache-otx2-7ba40650.tar .
+     $ tar xf sdk_cache-otx2-7ba40650.tar
+
+   As a result, the $MV_BLDR/output and $MV_BLDR/buildroot/dl directories are restored.
+   The build can then be started.
+
+Re-using SDK-cache from a previous release
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Bring "sdk_cache-otx2-7ba40650.tar" from previous release, but do not untar it. Then, build
+the cache again::
+
+	$ cp /path/to/my-saved-caches/sdk_cache-otx2-7ba40650.tar .
+	$ compile.sh custom_otx2 -s
+
+When the new release cache's defconfig is the *same* as in the previous release
+with the same sdk-cache-ID, the build gets bypassed with this message::
+
+	# No SDK-cache update needed for existing <sdk_cache-otx2-7ba40650.tar>
+	#============================End of build===============================
+
+When the new release cache's defconfig is *different* from the previous release
+the IDs are different. The <sdk_cache-otx2-7ba40650.tar>
+will be removed and a new <sdk_cache-otx2-XXXXXXXX.tar> will be created.
+
+Repeat steps 2 and 3 above with the new sdk_cache tarball for the new target builds.
+
+.. _ccache:
+
+CCACHE
+------
+Buildroot has a built-in optimization capability for "Compiler cache".
+Refer to the definitions of BR2_CCACHE, BR2_CCACHE_DIR, BR2_CCACHE_USE_BASEDIR in
+`8.12.3. Using ccache in Buildroot
+<https://buildroot.org/downloads/manual/manual.html#ccache>`_.
+
+This method has a constraint - it depends upon compile toolchain, but
+it does NOT check and does not update the cache when the toolchain is changed.
+
+Some users/developers can benefit from usage of this optimization method.
+However the main time-consuming task (up to 50% of the entire build time) in
+user builds is downloading package sources from external repositories.
+
+This method is not applicable for Marvel CI-Automation which runs inside of
+Docker-container and always starts from scratch.
+
+.. Note::
+
+ The CCACHE Buildroot feature is disabled in official releases.
+ A developer could enable it and try it on its own, using the concepts in the
+ `Buildroot manual <https://buildroot.org/downloads/manual/manual.html#ccache>`_.
+
+Other hints
+-----------
+a. Buildroot Work-directory ($MV_BLDR) and compiled Buildroot environment
+
+ The build is done in a specific <board><variant>_output directory.
+ Produced objects, dependencies and other files contain a full path to the
+ $MV_BLDR and $MV_BLDR/<board><variant>_output (and also contain a username).
+ The content of the compiled directory $MV_BLDR/* should not be moved or used by
+ a different user - the result of such build is unpredictable. For example,
+ if the build was build by the user 'jenkins' in the directory
+ /home/jenkins/workspace/nightly-devel, and SDK-cache migration must also be run
+ by the same user in the same directory.
+
+b. Always clean the environment after MV_BLDR migration.
+
+ To clean $MV_BLDR, remove the $MV_BLDR/<board><variant>_output.
+
+c. Using a default output directory with the **-d** option.
+
+ The "-d" parameter forces the build to use the $MV_BLDR/output directory,
+ instead of <board>-<variant>-output.
+ When using "-d", builds for all variants are done under the same $MV_BLDR/output.
+ Thus:
+   - Once a package ABC has been downloaded into $MV_BLDR/buildroot/dl/ABC it is
+     NOT updated and should be manually removed for renovation when source GIT context is changed.
+   - Buildroot checks dependency per-package and not per-file,
+     once a package ABC has been compiled in $MV_BLDR/output/build/ABC, it is
+     NOT recompiled automatically upon Code-change and should be manually removed for rebuild.
+   - The TARGET and STAGING folders cleanup may be required, but the procedure of
+     such cleanup is out of scope of this document.
+

@@ -1,0 +1,14 @@
+diff --git a/daemon/xml/CurrentConfigXML.h b/daemon/xml/CurrentConfigXML.h
+index abcdef1..1234567 100644
+
+--- a/daemon/xml/CurrentConfigXML.h      2025-02-04 00:04:46.655137908 +0530
++++ b/daemon/xml/CurrentConfigXML.h  2025-02-04 00:05:35.287092295 +0530
+@@ -3,6 +3,7 @@
+
+ #include <set>
+ #include <string>
++#include <cstdint>
+
+ namespace current_config_xml {
+
+

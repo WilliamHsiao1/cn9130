@@ -1,0 +1,11 @@
+config BR2_PACKAGE_BUILD_TEST
+	bool "build-test"
+	help
+	  Build test for stability testing.
+
+if BR2_PACKAGE_BUILD_TEST
+
+config BR2_PACKAGE_BUILD_TEST_GIT
+	bool "Obtain Build test for stability testing sources from GIT"
+
+endif

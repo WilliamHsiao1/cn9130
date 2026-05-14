@@ -1,0 +1,13 @@
+diff --git a/Makefile b/Makefile
+index d2c032b..5eafc13 100644
+--- a/linux/cavium-rootfs/source/build-test/Makefile
++++ b/linux/cavium-rootfs/source/build-test/Makefile
+@@ -14,7 +14,7 @@ TARGET_FILE=${shell if [ -e md5sums ]; then cat md5sums | cut -d " " -f 3; fi}
+ all: target
+ 
+ %.bin: %.cpp
+-	${CROSS}g++ -c -I . -I /usr/lib64/gcc/aarch64-thunderx-linux-gnu/4.7.0/include/ -DEXPECT_OK -fno-common -ftemplate-depth-50 -DEXIT_FAILURE=1 $< -o $@.tmp
++	${CROSS}g++ -c -I . -DEXPECT_OK -fno-common -ftemplate-depth-50 -DEXIT_FAILURE=1 $< -o $@.tmp
+ 	${CROSS}objcopy -j .text -O binary $@.tmp $@
+ 	rm $@.tmp
+ 

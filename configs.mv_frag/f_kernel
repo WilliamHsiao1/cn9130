@@ -1,0 +1,136 @@
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+# Copyright (c) 2019 Marvell.
+#------------------------------------------------------------------------------
+#
+# Fragment generating file <f_kernel>
+#
+
+if [[ ! $is_octeontx ]]; then
+frag_txt '#-
+BR2_LINUX_KERNEL_INSTALL_TARGET=y
+' ##
+fi
+
+if [[ $IS_DEVEL ]] && [[ ! $is_armada_any ]]; then
+frag_txt '#-
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_GIT=y
+BR2_LINUX_KERNEL_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/linux-kernel.git"
+BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION="linux-6.6.x-devel"
+BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
+# BR2_LINUX_KERNEL_DTS_SUPPORT is not set
+' ##
+fi
+if [[ $IS_DEVEL ]] && [[ $is_armada_any ]]; then
+frag_txt '#
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_GIT=y
+BR2_LINUX_KERNEL_CUSTOM_REPO_URL="https://github.com/Marvell-Lab/linux-kernel.git"
+BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION="linux-6.6.x-devel"
+BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
+BR2_LINUX_KERNEL_DTS_SUPPORT=y
+' ##
+fi
+
+if [[ $IS_RELEASE ]] && [[ ! $is_armada_any ]]; then
+frag_txt '#
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_TARBALL=y
+BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/linux/sources-linux-6.6.x-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
+# BR2_LINUX_KERNEL_DTS_SUPPORT is not set
+' ##
+fi
+if [[ $IS_RELEASE ]] && [[ $is_armada_any ]]; then
+frag_txt '#
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_TARBALL=y
+BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION="file://$(TOPDIR)/../base-sources-$(BR2_MARVELL_RELEASE_ID)/linux/sources-linux-6.6.x-$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
+BR2_LINUX_KERNEL_DTS_SUPPORT=y
+' ##
+fi
+
+if [[ $IS_RELEASE ]]; then
+frag_txt '
+BR2_ROOTFS_POST_SCRIPT_ARGS="$(BR2_MARVELL_SOC_FAMILY)"
+' ##
+fi
+
+if [[ $is_armada_any ]]; then
+frag_txt '
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/marvell_v8_armada_kernel.config"
+' ##
+fi
+if [[ ! $is_armada_any ]]; then
+if [[ $f_pkg_mainline_3_include ]]; then
+frag_txt '
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/marvell_v8_octeon_kernel_nf.config"
+' ##
+else
+frag_txt '
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_MARVELL_SDK_PATH)/board/marvell/marvell_v8_octeon_kernel.config"
+' ##
+fi
+fi
+
+#For all SoCs
+frag_txt '
+BR2_LINUX_KERNEL_VERSION_6_X=y
+BR2_PACKAGE_LIBGPIOD=y
+BR2_PACKAGE_LIBTRACEEVENT=y
+BR2_PACKAGE_CRYPTODEV_LINUX=y
+' ##
+
+
+if [[ $IS_RELEASE ]] && [[ $is_cn20k ]]; then
+frag_txt_cr '
+BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION="file://\$(TOPDIR)/../base-sources-\$(BR2_MARVELL_RELEASE_ID)/linux/sources-linux-6.6.x-\$(BR2_MARVELL_RELEASE_ID).tar.bz2"
+'
+fi
+
+if [[ $IS_DEVEL ]] && [[ $is_cn20k ]]; then
+frag_txt_cr '
+BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION="linux-6.6.x-devel"
+'
+fi
+
+
+#-----------------------------------------------------------------------------
+# Copy-and-reconfig kernel.config
+#  DO_NOT_COPY_RECONFIG in Base-SDK and if kernel.config file is already exist
+#-----------------------------------------------------------------------------
+#  Don't forget
+#  - to set the required {kconfig_name} variable
+#  - set the required PARAMETER string(with NO prefix CONFIG_)
+#      for relevan actions {enable|disable|set-str}
+# ----------------------------------------------------------------------------
+DO_NOT_COPY_RECONFIG=true
+if [[ ! $DO_NOT_COPY_RECONFIG ]]; then
+
+kconfig_name=marvell_v8_octeon_kernel_nf.config
+
+base_sdk_dir=$PWD/../sdk-base
+base_sdk_kconfig_dir=$base_sdk_dir/board/marvell
+solution_kconfig_dir=$PWD/board/marvell
+base_sdk_kconfig=$base_sdk_kconfig_dir/${kconfig_name}
+solution_kconfig=$solution_kconfig_dir/${kconfig_name}
+config_sh=${base_sdk_dir}/scripts/config.sh
+
+if [[ ! -e $solution_kconfig ]]; then
+
+mkdir -p $solution_kconfig_dir
+cp ${base_sdk_kconfig} ${solution_kconfig}
+
+# Overwrite default prefix "BR2_" (config.sh), restore it at the end
+CONFIG_orig=$CONFIG_
+export CONFIG_="CONFIG_"
+# ${config_sh} --file $solution_kconfig --enable  <KPARAM_A>
+# ${config_sh} --file $solution_kconfig --disable <KPARAM_B>
+# ${config_sh} --file $solution_kconfig --set-str <KPARAM_C> \"string to be set\"
+CONFIG_=$CONFIG_orig
+
+fi ;#if [[ ! -e $solution_kconfig ]]
+
+fi ;#DO_NOT_COPY_RECONFIG

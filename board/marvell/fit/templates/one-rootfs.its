@@ -1,0 +1,88 @@
+/* Cavium Thunder flattened image tree source
+ *
+ * SPDX-License-Identifier:           BSD-3-Clause
+ * https://spdx.org/licenses
+ * Copyright (c) 2017 Marvell.
+ */
+
+/dts-v1/;
+
+/ {
+	description = "Image for Cavium OcteonTX with Linux Kernel and ramdisk";
+	#address-cells = <1>;
+
+	images {
+		/* Ramdisk image for root filesystem */
+		ramdisk@1 {
+			/* Description of ramdisk */
+			description = "Cavium OcteonTX/Thunder Linux ramdisk";
+
+			/* Location of ramdisk file to use */
+			data = /incbin/("../../linux/cavium-rootfs/initramfs.cpio.lz4");
+
+			/* Type of data, must be "ramdisk" for cpio data */
+			type = "ramdisk";
+
+			/* Architecture, must be "arm64" */
+			arch = "arm64";
+
+			/* Operating system, must be "linux" */
+			os = "linux";
+
+			/* Compression used, for a .lz4 file this should be
+			 * "lz4".
+			 * Supported formats are bzip2, gzip, lzma, lzo and lz4.
+			 */
+			compression = "lz4";
+
+			/* Load address, should be past the kernel */
+			load = <0x48080000>;
+
+			/* Entry isn't really used for ramdisk, set same as
+			 * load address.
+			 */
+			entry = <0x48080000>;
+
+			/* First hash used to verify the ramfs image */
+			hash@1 {
+				/* Integrity hash algorithm */
+				algo = "sha256";
+			};
+
+			/* First signature of ramfs for development */
+			signature@1 {
+				/* signature algorithm */
+				algo = "sha256,rsa2048";
+
+				/* signature key filename */
+				key-name-hint = "dev";
+			};
+		};
+	};
+	configurations {
+		/* default configuration to use if not specified */
+		default = "config@1";
+
+		/* First configuration */
+		config@1 {
+			/* configuration for a particular kernel and root
+			 * filesystem pair.
+			 */
+			description = "OcteonTX/Thunder Linux configuration";
+
+			/* ramdisk image to use */
+			ramdisk = "ramdisk@1";
+
+			/* First signature of configuration for development */
+			signature@1 {
+				/* signature algorithm to use for configuration
+				 */
+				algo = "sha256,rsa2048";
+				/* signature key filename */
+				key-name-hint = "dev";
+				/* images that are signed */
+				sign-images = "ramdisk";
+			};
+		};
+	};
+};

@@ -1,0 +1,3 @@
+-include $(wildcard $(BR2_EXTERNAL_MARVELL_SDK_PATH)/boot/*/*.mk)
+-include $(wildcard $(BR2_EXTERNAL_MARVELL_SDK_PATH)/boot/marvell-external-fw/extension-packages/*/*.mk)
+-include $(wildcard $(BR2_EXTERNAL_MARVELL_SDK_PATH)/package/*/*.mk)

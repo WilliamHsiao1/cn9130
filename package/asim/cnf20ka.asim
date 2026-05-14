@@ -1,0 +1,96 @@
+#
+@${ASIM}/configs/${ASIM_ALT_CFG}
+
+# Fuse blow for number of bphy chiplets
+FUSE_P2C_DISABLE_START=0x338
+FUSE_P2C_DISABLE_WIDTH=4
+
+if ASIM_BPHYCOUNT == 0 : control n0.fus0 blow ${FUSE_P2C_DISABLE_START} ${FUSE_P2C_DISABLE_WIDTH} 3
+if ASIM_BPHYCOUNT == 1 : control n0.fus0 blow ${FUSE_P2C_DISABLE_START} ${FUSE_P2C_DISABLE_WIDTH} 2
+# if ASIM_BPHYCOUNT == 2 then do not blow the fuses
+
+# Load SPI image
+control n0.spi0 attach 0 mt25q512 ${SPI_IMAGE}
+control n0.spi0 attach 1 mt25q512 ${SPI_IMAGE}
+control n0.spi1 attach 0 mt25q512 ${SPI1_IMAGE}
+control n0.spi1 attach 1 mt25q512 ${SPI1_IMAGE}
+if ASIM_BPHYCOUNT : control n1.spi1 attach 0 mt25q512 ${SPI2_IMAGE}
+if ASIM_BPHYCOUNT : control n1.spi2 attach 0 mt25q512 ${SPI2_IMAGE}
+if ASIM_BPHYCOUNT == 2 : control n2.spi1 attach 0 mt25q512 ${SPI3_IMAGE}
+if ASIM_BPHYCOUNT == 2 : control n2.spi2 attach 0 mt25q512 ${SPI3_IMAGE}
+
+# Load eMMC image
+if MMC_IMAGE : control n0.emmc0 connect ${MMC_IMAGE}
+
+# Load the EBF symbols
+#symbols ${SYMBOL_IMAGE}
+
+#TAP interfaces for CC RPM0 LMACs
+if NIC0 : control n0.rpm0 lmac 0 ${NIC0}
+if NIC1 : control n0.rpm0 lmac 1 ${NIC1}
+if NIC2 : control n0.rpm0 lmac 2 ${NIC2}
+if NIC3 : control n0.rpm0 lmac 3 ${NIC3}
+
+#TAP interfaces for BPHY0 RPM0 LMACs
+if NIC4 : control n1.rpm0 lmac 0 ${NIC4}
+if NIC5 : control n1.rpm0 lmac 1 ${NIC5}
+if NIC6 : control n1.rpm0 lmac 2 ${NIC6}
+if NIC7 : control n1.rpm0 lmac 3 ${NIC7}
+
+#TAP interfaces for BPHY0 RPM1 LMACs
+if NIC8  : control n1.rpm1 lmac 0 ${NIC8}
+if NIC9  : control n1.rpm1 lmac 1 ${NIC9}
+if NIC10 : control n1.rpm1 lmac 2 ${NIC10}
+if NIC11 : control n1.rpm1 lmac 3 ${NIC11}
+
+#TAP interfaces for BPHY0 RPM2 LMACs
+if (( BPHY_TYPE_MP == 1 ) & ( ASIM_BPHYCOUNT == 1 ) & NIC12 ) : control n1.rpm2 lmac 0 ${NIC12}
+if (( BPHY_TYPE_MP == 1 ) & ( ASIM_BPHYCOUNT == 1 ) & NIC13 ) : control n1.rpm2 lmac 1 ${NIC13}
+if (( BPHY_TYPE_MP == 1 ) & ( ASIM_BPHYCOUNT == 1 ) & NIC14 ) : control n1.rpm2 lmac 2 ${NIC14}
+if (( BPHY_TYPE_MP == 1 ) & ( ASIM_BPHYCOUNT == 1 ) & NIC15 ) : control n1.rpm2 lmac 3 ${NIC15}
+
+#TAP interfaces for BPHY1 RPM0 LMACs
+if (( ASIM_BPHYCOUNT == 2 ) & NIC12 ) : control n2.rpm0 lmac 0 ${NIC12}
+if (( ASIM_BPHYCOUNT == 2 ) & NIC13 ) : control n2.rpm0 lmac 1 ${NIC13}
+if (( ASIM_BPHYCOUNT == 2 ) & NIC14 ) : control n2.rpm0 lmac 2 ${NIC14}
+if (( ASIM_BPHYCOUNT == 2 ) & NIC15 ) : control n2.rpm0 lmac 3 ${NIC15}
+
+#TAP interfaces for BPHY1 RPM1 LMACs
+if (( ASIM_BPHYCOUNT == 2 ) & NIC16 ) : control n2.rpm1 lmac 0 ${NIC16}
+if (( ASIM_BPHYCOUNT == 2 ) & NIC17 ) : control n2.rpm1 lmac 1 ${NIC17}
+if (( ASIM_BPHYCOUNT == 2 ) & NIC18 ) : control n2.rpm1 lmac 2 ${NIC18}
+if (( ASIM_BPHYCOUNT == 2 ) & NIC19 ) : control n2.rpm1 lmac 3 ${NIC19}
+
+# Tell the EBF how much memory is available at magic address 1GB
+# First byte is the enable mask for DSS
+# Second byte is the size of each DIMM in GB
+# Third byte is the number of DIMMs per DSS (1 or 2)
+mm1 0x40000000 7 secure external
+mm1 0x40000001 $(ASIM_DIMM_SIZE) secure external
+mm1 0x40000002 $(ASIM_DIMM_PER_LMC) secure external
+
+control n0.uaa0 connect ${UART0PORT}
+control n0.uaa1 connect ${UART1PORT}
+control n0.uaa2 connect ${UART2PORT}
+control n0.uaa3 connect ${UART3PORT}
+control n0.uaa4 connect ${UART4PORT}
+control n0.uaa5 connect ${UART5PORT}
+control n0.uaa6 connect ${UART6PORT}
+control n0.uaa7 connect ${UART7PORT}
+# UART15 is used by PCP
+control n0.uaa15 connect ${UART15PORT}
+control n0.uaa0 wait
+
+#
+# Set GPIO strap pins (boot method)
+control n0.gpio0 set strap ${BOOT_STRAP}
+
+# set CPC_TIMER100 to increment when SCP core is running
+control n0.cpc0 set timer100 0
+
+# Load ROM image and associated symbols into CPC
+control n0.cpc0 loadrom -b ${ROM_IMAGE}
+#symbols ${ROM_IMAGE} scp
+
+control n0.xcp0 set autostart on
+mm8 n0.rst0[0]+0x1980 = 1 secure

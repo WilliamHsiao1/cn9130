@@ -1,0 +1,166 @@
+Development guide
+=================
+
+This chapter is relevant for Code Development process and gives some hints for:
+
+- :ref:`buildroot_base_knowledge`
+- :ref:`overriding_source_code`, including rebuilding quickly
+
+It may also be useful to see :ref:`sdk_cache` for details on speeding up your build.
+
+Recommendations herein are relevant for DEVEL and for RELEASE modes.
+In this document, the bash-variable **MV_BLDR** is used
+to refer to the SDK installation directory (e.g., ~/work).
+
+This section contains some advanced topics so please be familiar with
+:ref:`building_development_images` and :ref:`building_development_images`
+before proceeding.
+
+.. _buildroot_base_knowledge:
+
+Buildroot Base Knowledge
+------------------------
+
+Buildroot Stages
+~~~~~~~~~~~~~~~~
+For every package <PKG> to be built, the Buildroot applies the below stages::
+
+ >>> <PKG> Downloading	fetch Sources from a GIT into <buildroot/dl/PKG/git/*> folder
+ >>> <PKG> Extracting	compilation is never done in the above but in output-build
+			directory (full neme depends upon <PKG>_VERSION):
+			  *output/build/PKG
+			  *output/build/PKG-custom
+			  *output/build/PKG-PKG-ver-1.2.3
+			  *output/build/PKG-ver-1.2.3
+ >>> <PKG> Patching
+ >>> <PKG> Configuring
+ >>> <PKG> Building
+ >>> <PKG> Installing to Target
+ >>> <PKG> Installing to Images
+
+Stamps and Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~
+The successful stage execution is finalized by creating a STAMP-file::
+
+ output/build/<PKG>/.stamp_downloaded
+ output/build/<PKG>/.stamp_extracted  or .stamp_rsynced (refer :ref:`overriding_source_code`)
+ output/build/<PKG>/.stamp_patched
+ output/build/<PKG>/.stamp_configured
+ output/build/<PKG>/.stamp_built
+ output/build/<PKG>/.stamp_staging_installed
+ output/build/<PKG>/.stamp_target_installed
+ output/build/<PKG>/.stamp_images_installed
+
+These files are used by Buildroot as dependency.
+If a STAMP-file is found for the stage, the stage is NOT called, but bypassed instead.
+
+A correct package <PKG> may have implicit and/or explicit dependency upon
+other packages. Therefore making <PKG> may cause other builds to be done first.
+Once compiled, a package has STAMP-files and would never be compiled further on.
+
+The "dirclean" does NOT clean files installed into "target" and/or "images"
+directories, it just totally removes the directory \*output/build/PKG.
+The **dirclean has NO dependency checks on packages**, so if other packages
+should be re-built or their files should be re-installed, the "dirclean" should
+be called for them or related \*output/build/xx folders should be removed.
+
+Working and Output Directories
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The full path to the working and output directories is built into many configuration,
+internal, and dependency files.
+**Never try to rename an already compiled output or base for working directory (MV_BLDR)
+to re-compile another path.**  The result is unpredictable.
+The username is also a part of the built-in configuration, so **do not re-compile
+under another user**.
+
+By default Marvell script compile.sh creates an **output** directory with a
+prefix generated upon given build-target variant (platform, board...). See
+:ref:`output_directories` for details.
+
+.. _overriding_source_code:
+
+Overriding the source code directory for a <PKG>
+------------------------------------------------
+Sometimes, one or more packages require a modification before build.
+Buildroot gives this possibility.
+Refer to `Using Buildroot during development
+<https://buildroot.org/downloads/manual/manual.html#_advanced_usage>`_.
+However, this documented canonical way is complicated.
+
+The :ref:`ci_script` method provides an easy solution, by simply calling
+for configuration-only **"compile.sh ... -c"** first. As a result,
+the special template **$MV_BLDR/override_srcdir.mk** is created.
+This file is a Makefile containing the list of PACKAGEs/TARGETs with
+xxx_OVERRIDE_SRCDIR definitiions which may used for development. All by
+default are under comment.
+
+Edit this file with required PACKAGEs/TARGETs and correct paths to them,
+or add any other package <PKG> with its path.
+The "template" is created once and not touched/modified by Buildroot.
+It is used for every further build/rebuild; sources (modified sources) would
+be extracted and built from the given override source-directory instead of
+buildroot/dl/<PKG>.
+
+The OVERRIDE works the same for DEVEL and RELEASE modes
+and also the same for build by "compile.sh" and by canonical "make".
+
+It may also be useful to take advantage of :ref:`configuration_and_defconfig_fragments`
+if your build has a large number of components, many board targets, or if a layered software
+build architecture is required.
+
+Quick-rebuild for a file updated in override_srcdir path
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Change source (sources) in <override><PKG> and make::
+
+	$ cd output
+	$ rm build/PKG/.stamp_built
+	$ rm build/PKG/.stamp_rsynced
+	$ rm build/PKG/.stamp_staging_installed
+	$ rm build/PKG/.stamp_target_installed
+	$ rm build/PKG/.stamp_images_installed
+	#-Build <PKG> and re-create the rootfs.tar
+	$ make PKG-all
+	#-Build only <PKG> without rooutfs
+	$ make PKG
+	#-   All above steps for build only <PKG> without rooutfs
+	#-   are integrated in one compile.sh command with 2 extra options "-q -p"
+	$ ./scripts/ci/compile.sh ... -q -p <PKG>
+
+EXAMPLE: Target:OcteonTx2/cn96xx, Modified: Kernel-Linux 4.14
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::
+
+	$ #;-- Enter compilation directory.
+	$ cd $MV_BLDR/sdk-base
+	$
+	$ #;-- Create SDK-cache (without freq-changed-components) and backup it for re-use
+	$ ./scripts/ci/compile.sh cn96xx -s
+	$ cp ../sdk_cache*.tar /path/to/my-saved-caches
+	$
+	$ #;-- Override Linux source directory (once forever)
+	$ vi ../override_srcdir.mk
+	##     Edit  old: # LINUX_OVERRIDE_SRCDIR = $(MV_REPO_ROOT)/kernel/linux
+	##           new: LINUX_OVERRIDE_SRCDIR = $(MV_REPO_ROOT)/kernel/linux
+	##     Edit required files in $(MV_REPO_ROOT)/kernel/linux/* ...
+	$
+	$ #;-- Full Build using the SDK-cache
+	$ ./scripts/ci/compile.sh cn96xx -d
+	$
+	##     Edit files in $(MV_REPO_ROOT)/kernel/linux/* ...
+	$
+	$ #:-- Quick rebuild linux only
+	$ ./scripts/ci/compile.sh cn96xx -d -q -p linux
+	$ #:-- Create only the rootfs.tar now
+	$ ./scripts/ci/compile.sh cn96xx -d
+
+Useful global directory-variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Here is a list of useful global directory-variables defined in the main/upper Makefile
+$MV_BLDR/buildroot/Makefile and usable in all PACKAGE/TARGET.mk files::
+
+	TOPDIR          : $MV_BLDR/buildroot
+	BASE_DIR        : $MV_BLDR/***output
+	BUILD_DIR       := $(BASE_DIR)/build
+	BINARIES_DIR    := $(BASE_DIR)/images
+	HOST_DIR        := $(BASE_DIR)/host
+	BASE_TARGET_DIR := $(BASE_DIR)/target

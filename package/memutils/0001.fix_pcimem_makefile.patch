@@ -1,0 +1,29 @@
+diff -Nru a/pcimem/Makefile b/pcimem/Makefile
+--- a/pcimem/Makefile	2019-08-08 12:54:45.000000000 +0300
++++ b/pcimem/Makefile	2019-08-08 14:41:03.743648037 +0300
+@@ -1,9 +1,21 @@
+-
+-CC ?= gcc
++CROSS_COMPILE ?=
++LDFLAGS ?=
+ CFLAGS ?= -Wall -g
+ 
+-main: pcimem
++RM = rm -f
++CD = cd
++ECHO = echo
++
++all: clean pcimem
++
++pcimem: pcimem.o
++	${CROSS_COMPILE}gcc $(CFLAGS) $(LDFLAGS) -o $@ $^
++
++%.o: %.c
++	$(ECHO) "  CC    $<"
++	${CROSS_COMPILE}gcc $(CFLAGS) -c $<
+ 
+ clean:
+-	-rm -f *.o *~ core pcimem
++	$(RM) pcimem *.o
++
+ 

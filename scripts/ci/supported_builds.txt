@@ -1,0 +1,38 @@
+#
+# SPDX-License-Identifier:           BSD-3-Clause
+# https://spdx.org/licenses
+#
+# Copyright (c) 2018 Marvell.
+#
+custom_cn20k
+custom_cnf10k
+custom_cn10k
+custom_otx2
+custom_otx
+custom_armada
+#
+cn9130
+cn9130_B
+cn9130_C
+cn9130_crb-r1p3
+cn9130_crb_B-r1p3
+cn9130_crb_C-r1p3
+cn9131
+cn9131_B
+cn9131_C
+cn9132
+cn9132_B
+cn9132_C
+cn93xx
+cn96xx
+cn96xx_lk4_18
+cnf95xx
+loki
+cn98xx
+f95mm
+cn10ka
+cn10kb
+cnf10ka
+cnf10kb
+cn20ka
+cnf20ka
