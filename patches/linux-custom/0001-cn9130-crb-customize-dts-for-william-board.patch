@@ -1,0 +1,310 @@
+--- a/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi	2026-04-28 16:37:50.000000000 +0800
++++ b/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi	2026-05-27 14:21:39.422612688 +0800
+@@ -26,32 +26,12 @@
+ 		reg = <0x0 0x0 0x0 0x80000000>;
+ 	};
+ 
+-	ap0_reg_mmc_vccq: regulator-1 {
+-		compatible = "regulator-gpio";
+-		regulator-name = "ap0_mmc_vccq";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <3300000>;
+-		gpios = <&expander0 5 GPIO_ACTIVE_HIGH>;
+-		states = <1800000 0x1
+-			  3300000 0x0>;
+-	};
+-
+-	cp0_reg_usb3_vbus1: regulator-2 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "cp0-xhci1-vbus";
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-		enable-active-high;
+-		gpio = <&expander0 8 GPIO_ACTIVE_HIGH>;
+-	};
+-
+ 	cp0_usb3_0_phy0: usb-phy-1 {
+ 		compatible = "usb-nop-xceiv";
+ 	};
+ 
+ 	cp0_usb3_0_phy1: usb-phy-2 {
+ 		compatible = "usb-nop-xceiv";
+-		vcc-supply = <&cp0_reg_usb3_vbus1>;
+ 	};
+ 
+ 	cp0_reg_sd_vccq: regulator-3 {
+@@ -73,16 +53,6 @@
+ 		enable-active-high;
+ 		regulator-always-on;
+ 	};
+-
+-	sfp: sfp {
+-		compatible = "sff,sfp";
+-		i2c-bus = <&cp0_i2c1>;
+-		mod-def0-gpios = <&expander0 3 GPIO_ACTIVE_LOW>;
+-		los-gpios = <&expander0 15 GPIO_ACTIVE_HIGH>;
+-		tx-disable-gpios = <&expander0 2 GPIO_ACTIVE_HIGH>;
+-		tx-fault-gpios = <&cp0_gpio1 24 GPIO_ACTIVE_HIGH>;
+-		maximum-power-milliwatt = <3000>;
+-	};
+ };
+ 
+ &uart0 {
+@@ -95,7 +65,6 @@
+ 	bus-width = <8>;
+ 	status = "okay";
+ 	mmc-ddr-1_8v;
+-	vqmmc-supply = <&ap0_reg_mmc_vccq>;
+ };
+ 
+ &cp0_syscon0 {
+@@ -123,6 +92,12 @@
+ 			marvell,pins = "mpp13", "mpp14", "mpp15", "mpp16";
+ 			marvell,function = "spi1";
+ 		};
++		cp0_ge1_rgmii_pins: cp0-ge1-rgmii-pins {
++			marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
++				       "mpp4", "mpp5", "mpp6", "mpp7",
++				       "mpp8", "mpp9", "mpp10", "mpp11";
++			marvell,function = "ge0";
++		};
+ 	};
+ };
+ 
+@@ -139,12 +114,27 @@
+ 	pinctrl-0 = <&cp0_i2c0_pins>;
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+-	expander0: mcp23x17@20 {
+-		compatible = "microchip,mcp23017";
+-		gpio-controller;
+-		#gpio-cells = <2>;
+-		reg = <0x20>;
+-		status = "okay";
++
++	tpm@30 {
++		compatible = "st,st33ktpm2xi2c", "tcg,tpm-tis-i2c";
++		reg = <0x30>;
++		status = "disabled";
++	};
++
++	eeprom@53 {
++		compatible = "atmel,24c256";
++		reg = <0x53>;
++		pagesize = <64>;
++	};
++
++	temp-sensor@48 {
++		compatible = "national,lm75b";
++		reg = <0x48>;
++	};
++
++	temp-sensor@49 {
++		compatible = "national,lm75b";
++		reg = <0x49>;
+ 	};
+ };
+ 
+@@ -202,135 +192,16 @@
+ 
+ &cp0_mdio {
+ 	status = "okay";
+-	phy0: ethernet-phy@0 {
+-		reg = <0>;
++	phy0: ethernet-phy@5 {
++		reg = <5>;
+ 	};
+-
+-	switch6: ethernet-switch@6 {
+-		/* Actual device is MV88E6393X */
+-		compatible = "marvell,mv88e6190";
+-		reg = <6>;
+-		interrupt-parent = <&cp0_gpio1>;
+-		interrupts = <28 IRQ_TYPE_LEVEL_LOW>;
+-		interrupt-controller;
+-		#interrupt-cells = <2>;
+-
+-		dsa,member = <0 0>;
+-
+-		ethernet-ports {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-
+-			ethernet-port@1 {
+-				reg = <1>;
+-				label = "p1";
+-				phy-handle = <&switch0phy1>;
+-			};
+-
+-			ethernet-port@2 {
+-				reg = <2>;
+-				label = "p2";
+-				phy-handle = <&switch0phy2>;
+-			};
+-
+-			ethernet-port@3 {
+-				reg = <3>;
+-				label = "p3";
+-				phy-handle = <&switch0phy3>;
+-			};
+-
+-			ethernet-port@4 {
+-				reg = <4>;
+-				label = "p4";
+-				phy-handle = <&switch0phy4>;
+-			};
+-
+-			ethernet-port@5 {
+-				reg = <5>;
+-				label = "p5";
+-				phy-handle = <&switch0phy5>;
+-			};
+-
+-			ethernet-port@6 {
+-				reg = <6>;
+-				label = "p6";
+-				phy-handle = <&switch0phy6>;
+-			};
+-
+-			ethernet-port@7 {
+-				reg = <7>;
+-				label = "p7";
+-				phy-handle = <&switch0phy7>;
+-			};
+-
+-			ethernet-port@8 {
+-				reg = <8>;
+-				label = "p8";
+-				phy-handle = <&switch0phy8>;
+-			};
+-
+-			ethernet-port@9 {
+-				reg = <9>;
+-				label = "p9";
+-				phy-mode = "10gbase-r";
+-				sfp = <&sfp>;
+-				managed = "in-band-status";
+-			};
+-
+-			ethernet-port@a {
+-				reg = <10>;
+-				ethernet = <&cp0_eth0>;
+-				phy-mode = "10gbase-r";
+-				managed = "in-band-status";
+-			};
+-
+-		};
+-
+-		mdio {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-
+-			switch0phy1: ethernet-phy@1 {
+-				reg = <0x1>;
+-			};
+-
+-			switch0phy2: ethernet-phy@2 {
+-				reg = <0x2>;
+-			};
+-
+-			switch0phy3: ethernet-phy@3 {
+-				reg = <0x3>;
+-			};
+-
+-			switch0phy4: ethernet-phy@4 {
+-				reg = <0x4>;
+-			};
+-
+-			switch0phy5: ethernet-phy@5 {
+-				reg = <0x5>;
+-			};
+-
+-			switch0phy6: ethernet-phy@6 {
+-				reg = <0x6>;
+-			};
+-
+-			switch0phy7: ethernet-phy@7 {
+-				reg = <0x7>;
+-			};
+-
+-			switch0phy8: ethernet-phy@8 {
+-				reg = <0x8>;
+-			};
+-		};
++	phy1: ethernet-phy@1 {
++		reg = <1>;
+ 	};
+ };
+ 
+ &cp0_xmdio {
+-	status = "okay";
+-	nbaset_phy0: ethernet-phy@0 {
+-		compatible = "ethernet-phy-ieee802.3-c45";
+-		reg = <0>;
+-	};
++	status = "disabled";
+ };
+ 
+ &cp0_ethernet {
+@@ -338,23 +209,33 @@
+ };
+ 
+ &cp0_eth0 {
+-	/* This port is connected to 88E6393X switch */
+-	status = "okay";
+-	phy-mode = "10gbase-r";
+-	managed = "in-band-status";
+-	phys = <&cp0_comphy4 0>;
++	status = "disabled";
+ };
+ 
+ &cp0_eth1 {
+ 	status = "okay";
+-	phy = <&phy0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&cp0_ge1_rgmii_pins>;
++	phy = <&phy1>;
+ 	phy-mode = "rgmii-id";
++	local-mac-address = [02 00 00 00 00 02];
+ };
+ 
+ &cp0_eth2 {
+-	/* This port uses "2500base-t" phy-mode */
+-	status = "disabled";
+-	phy = <&nbaset_phy0>;
+-	phys = <&cp0_comphy5 2>;
++	status = "okay";
++	phy = <&phy0>;
++	phy-mode = "sgmii";
++	local-mac-address = [02 00 00 00 00 03];
+ };
+ 
++&cp0_usb3_0 {
++	status = "okay";
++	usb-phy = <&cp0_usb3_0_phy0>;
++	phy-names = "usb";
++};
++
++&cp0_usb3_1 {
++	status = "okay";
++	usb-phy = <&cp0_usb3_0_phy1>;
++	phy-names = "usb";
++};
+
+--- a/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts	2026-04-28 16:37:35.000000000 +0800
++++ b/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts	2026-05-27 11:22:13.244575026 +0800
+@@ -25,14 +25,4 @@
+ 	iommu-map-mask = <0x031f>;
+ };
+ 
+-&cp0_usb3_0 {
+-	status = "okay";
+-	usb-phy = <&cp0_usb3_0_phy0>;
+-	phy-names = "usb";
+-};
+ 
+-&cp0_usb3_1 {
+-	status = "okay";
+-	usb-phy = <&cp0_usb3_0_phy1>;
+-	phy-names = "usb";
+-};
