@@ -1,5 +1,5 @@
---- a/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi	2026-04-28 16:37:50.000000000 +0800
-+++ b/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi	2026-05-27 14:21:39.422612688 +0800
+--- a/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
++++ b/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
 @@ -26,32 +26,12 @@
  		reg = <0x0 0x0 0x0 0x80000000>;
  	};
@@ -105,7 +105,28 @@
  	};
  };
  
-@@ -202,135 +192,16 @@
+@@ -153,6 +143,20 @@
+ 	pinctrl-0 = <&cp0_i2c1_pins>;
+ 	clock-frequency = <100000>;
+ 	status = "okay";
++
++	gpio_expander0: gpio@20 {
++		compatible = "diodes,pi4ioe5v9555", "nxp,pca9555";
++		reg = <0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
++
++	gpio_expander1: gpio@21 {
++		compatible = "diodes,pi4ioe5v9555", "nxp,pca9555";
++		reg = <0x21>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+ 
+ 
+@@ -202,135 +206,16 @@
  
  &cp0_mdio {
  	status = "okay";
@@ -246,7 +267,7 @@
  };
  
  &cp0_ethernet {
-@@ -338,23 +209,33 @@
+@@ -338,23 +223,33 @@
  };
  
  &cp0_eth0 {
@@ -290,9 +311,8 @@
 +	usb-phy = <&cp0_usb3_0_phy1>;
 +	phy-names = "usb";
 +};
-
---- a/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts	2026-04-28 16:37:35.000000000 +0800
-+++ b/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts	2026-05-27 11:22:13.244575026 +0800
+--- a/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts
++++ b/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts
 @@ -25,14 +25,4 @@
  	iommu-map-mask = <0x031f>;
  };
