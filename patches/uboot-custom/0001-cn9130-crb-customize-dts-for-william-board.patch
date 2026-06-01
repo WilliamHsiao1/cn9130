@@ -120,3 +120,23 @@
  	compatible = "marvell,cn9130-crb-A",
  		"marvell,cn9130",
  		"marvell,armada-ap806-quad",
+@@ -29,7 +29,8 @@
+ 	};
+ 
+ 	phy3 {
+-		phy-type = <COMPHY_TYPE_PEX0>;
++		/* CP_SRD3: connected to GL3523 USB3 upstream (schematic page 16) */
++		phy-type = <COMPHY_TYPE_USB3_HOST1>;
+ 	};
+ 
+ 	phy4 {
+@@ -44,7 +44,8 @@
+ };
+ 
+ &cp0_pcie0 {
+-	num-lanes = <4>;
++	/* XR17V358 links at Gen1-x1; only comphy0 needed */
++	num-lanes = <1>;
+ 		/* non-prefetchable memory */
+ 	ranges =<0x82000000 0 0xc0000000 0 0xc0000000 0 0x2000000>;
+ 	status = "okay";

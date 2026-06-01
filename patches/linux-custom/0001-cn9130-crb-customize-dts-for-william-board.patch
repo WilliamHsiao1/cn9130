@@ -297,7 +297,7 @@
  };
  
  &cp0_ethernet {
-@@ -338,23 +246,33 @@
+@@ -338,23 +246,48 @@
  };
  
  &cp0_eth0 {
@@ -328,18 +328,33 @@
 +	phy = <&phy0>;
 +	phy-mode = "sgmii";
 +	local-mac-address = [02 00 00 00 00 03];
- };
- 
++};
++
++/* PCIe: XR17V358 runs Gen1-x1; comphy0 only, comphy3 freed for USB3 */
++&cp0_pcie0 {
++	num-lanes = <1>;
++	num-viewport = <8>;
++	phys = <&cp0_comphy0 0>;
++	iommu-map =
++		<0x0   &smmu 0x480 0x20>,
++		<0x100 &smmu 0x4a0 0x20>,
++		<0x200 &smmu 0x4c0 0x20>;
++	iommu-map-mask = <0x031f>;
++	status = "okay";
++};
++
 +&cp0_usb3_0 {
 +	status = "okay";
 +	usb-phy = <&cp0_usb3_0_phy0>;
 +	phy-names = "usb";
-+};
-+
+ };
+ 
 +&cp0_usb3_1 {
 +	status = "okay";
 +	usb-phy = <&cp0_usb3_0_phy1>;
 +	phy-names = "usb";
++	/* comphy3 = GL3523 USB3 upstream SuperSpeed (schematic CP_SRD3_USB3_TX/RX) */
++	phys = <&cp0_comphy3 1>, <&cp0_utmi1>;
 +};
 --- a/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts
 +++ b/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts
