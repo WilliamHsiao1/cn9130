@@ -109,8 +109,8 @@
 +	local-mac-address = [02 00 00 00 00 03];
  };
 
---- a/arch/arm/dts/cn9130-crb-A.dts	2026-04-28 16:33:21.000000000 +0800
-+++ b/arch/arm/dts/cn9130-crb-A.dts	2026-05-22 15:45:42.605617207 +0800
+--- a/arch/arm/dts/cn9130-crb-A.dts
++++ b/arch/arm/dts/cn9130-crb-A.dts
 @@ -6,7 +6,7 @@
  #include "cn9130-crb.dtsi"
  
@@ -120,17 +120,47 @@
  	compatible = "marvell,cn9130-crb-A",
  		"marvell,cn9130",
  		"marvell,armada-ap806-quad",
-@@ -29,7 +29,8 @@
+@@ -15,34 +15,41 @@
+ 
+ &cp0_comphy {
+ 	phy0 {
++		/* Lane 0: PCIe Port0 (x4 capable, x1 used for XR17V358) */
+ 		phy-type = <COMPHY_TYPE_PEX0>;
+ 	};
+ 
+ 	phy1 {
+-		phy-type = <COMPHY_TYPE_PEX0>;
++		/* Lane 1: ETH Port2 → SGMII (eth2 / 1G) */
++		phy-type = <COMPHY_TYPE_SGMII2>;
++		phy-speed = <COMPHY_SPEED_1_25G>;
+ 	};
+ 
+ 	phy2 {
+-		phy-type = <COMPHY_TYPE_PEX0>;
++		/* Lane 2: ETH Port0 → SFP+ 10G (eth0) */
++		phy-type = <COMPHY_TYPE_SFI0>;
++		phy-speed = <COMPHY_SPEED_10_3125G>;
  	};
  
  	phy3 {
 -		phy-type = <COMPHY_TYPE_PEX0>;
-+		/* CP_SRD3: connected to GL3523 USB3 upstream (schematic page 16) */
++		/* Lane 3: USB3 Port1 Host → GL3523 USB3 upstream */
 +		phy-type = <COMPHY_TYPE_USB3_HOST1>;
  	};
  
  	phy4 {
-@@ -44,7 +44,8 @@
+-		phy-type = <COMPHY_TYPE_SFI0>;
+-		phy-speed = <COMPHY_SPEED_10_3125G>;
++		/* Lane 4: PCIe Port1 (x1) */
++		phy-type = <COMPHY_TYPE_PEX1>;
+ 	};
+ 
+ 	phy5 {
+-		phy-type = <COMPHY_TYPE_SGMII2>;
+-		phy-speed = <COMPHY_SPEED_3_125G>;
++		/* Lane 5: PCIe Port2 (x1) */
++		phy-type = <COMPHY_TYPE_PEX2>;
+ 	};
  };
  
  &cp0_pcie0 {
