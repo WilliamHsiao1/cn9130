@@ -1,14 +1,6 @@
 --- a/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
 +++ b/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
-@@ -6,6 +6,7 @@
- #include "cn9130.dtsi" /* include SoC device tree */
- 
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/interrupt-controller/irq.h>
- 
- / {
- 	chosen {
-@@ -26,32 +27,12 @@
+@@ -26,32 +26,12 @@
  		reg = <0x0 0x0 0x0 0x80000000>;
  	};
  
@@ -41,45 +33,31 @@
  	};
  
  	cp0_reg_sd_vccq: regulator-3 {
-@@ -73,16 +54,6 @@
- 		enable-active-high;
- 		regulator-always-on;
- 	};
--
--	sfp: sfp {
--		compatible = "sff,sfp";
--		i2c-bus = <&cp0_i2c1>;
+@@ -77,10 +57,10 @@
+ 	sfp: sfp {
+ 		compatible = "sff,sfp";
+ 		i2c-bus = <&cp0_i2c1>;
 -		mod-def0-gpios = <&expander0 3 GPIO_ACTIVE_LOW>;
 -		los-gpios = <&expander0 15 GPIO_ACTIVE_HIGH>;
 -		tx-disable-gpios = <&expander0 2 GPIO_ACTIVE_HIGH>;
 -		tx-fault-gpios = <&cp0_gpio1 24 GPIO_ACTIVE_HIGH>;
--		maximum-power-milliwatt = <3000>;
--	};
++		mod-def0-gpios    = <&cp0_gpio2 27 GPIO_ACTIVE_LOW>;   /* SFP_SE_DETECT_L= CP_MPP59 (SFP0_DETECT_L also on MPP29) */
++		los-gpios         = <&cp0_gpio2 26 GPIO_ACTIVE_HIGH>;  /* SFP_SE_LOS     = CP_MPP58 (SFP0_LOS      also on MPP27) */
++		tx-disable-gpios  = <&cp0_gpio2 25 GPIO_ACTIVE_HIGH>;  /* SFP_SE_TX_DIS  = CP_MPP57 (SFP0_TX_DIS   also on MPP28) */
++		tx-fault-gpios    = <&cp0_gpio2 24 GPIO_ACTIVE_HIGH>;  /* SFP_SE_TX_FAULT= CP_MPP56 */
+ 		maximum-power-milliwatt = <3000>;
+ 	};
  };
- 
- &uart0 {
-@@ -95,7 +66,6 @@
+@@ -95,7 +75,7 @@
  	bus-width = <8>;
  	status = "okay";
  	mmc-ddr-1_8v;
 -	vqmmc-supply = <&ap0_reg_mmc_vccq>;
++	/* vqmmc-supply = <&ap0_reg_mmc_vccq>; TODO: enable after MCP23017 verified */
  };
  
  &cp0_syscon0 {
-@@ -123,6 +93,12 @@
- 			marvell,pins = "mpp13", "mpp14", "mpp15", "mpp16";
- 			marvell,function = "spi1";
- 		};
-+		cp0_ge1_rgmii_pins: cp0-ge1-rgmii-pins {
-+			marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
-+				       "mpp4", "mpp5", "mpp6", "mpp7",
-+				       "mpp8", "mpp9", "mpp10", "mpp11";
-+			marvell,function = "ge0";
-+		};
- 	};
- };
- 
-@@ -139,12 +115,27 @@
+@@ -139,13 +119,6 @@
  	pinctrl-0 = <&cp0_i2c0_pins>;
  	status = "okay";
  	clock-frequency = <100000>;
@@ -89,287 +67,7 @@
 -		#gpio-cells = <2>;
 -		reg = <0x20>;
 -		status = "okay";
-+
-+	tpm@30 {
-+		compatible = "st,st33ktpm2xi2c", "tcg,tpm-tis-i2c";
-+		reg = <0x30>;
-+		status = "disabled";
-+	};
-+
-+	eeprom@53 {
-+		compatible = "atmel,24c256";
-+		reg = <0x53>;
-+		pagesize = <64>;
-+	};
-+
-+	temp-sensor@48 {
-+		compatible = "national,lm75b";
-+		reg = <0x48>;
-+	};
-+
-+	temp-sensor@49 {
-+		compatible = "national,lm75b";
-+		reg = <0x49>;
- 	};
- };
- 
-@@ -153,6 +144,42 @@
- 	pinctrl-0 = <&cp0_i2c1_pins>;
- 	clock-frequency = <100000>;
- 	status = "okay";
-+
-+	/* U53: PI4IOE5V9555LEX GPIO expander, controls XR17V358 CH1-CH4 transceiver mode
-+	 * Each channel has 4 control pins: MODE0, MODE1, SLEW, TERM
-+	 * MODE[1:0]: 01=RS232, 10=RS485 half-duplex, 11=RS422 full-duplex
-+	 * SLEW: slew rate control, TERM: 120-ohm termination enable
-+	 */
-+	gpio_expander0: gpio@20 {
-+		compatible = "diodes,pi4ioe5v9555", "nxp,pca9555";
-+		reg = <0x20>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		/* INT_N -> CP_MPP38 = cp0_gpio2 pin 6 (38-32=6) */
-+		interrupt-parent = <&cp0_gpio2>;
-+		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
-+		gpio-line-names =
-+			"CH1_MODE0", "CH1_MODE1", "CH1_SLEW", "CH1_TERM",
-+			"CH2_MODE0", "CH2_MODE1", "CH2_SLEW", "CH2_TERM",
-+			"CH3_MODE0", "CH3_MODE1", "CH3_SLEW", "CH3_TERM",
-+			"CH4_MODE0", "CH4_MODE1", "CH4_SLEW", "CH4_TERM";
-+	};
-+
-+	/* U55: PI4IOE5V9555LEX GPIO expander, controls XR17V358 CH5-CH8 transceiver mode */
-+	gpio_expander1: gpio@21 {
-+		compatible = "diodes,pi4ioe5v9555", "nxp,pca9555";
-+		reg = <0x21>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		/* INT_N -> CP_MPP38 = cp0_gpio2 pin 6, shared with U53 */
-+		interrupt-parent = <&cp0_gpio2>;
-+		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
-+		gpio-line-names =
-+			"CH5_MODE0", "CH5_MODE1", "CH5_SLEW", "CH5_TERM",
-+			"CH6_MODE0", "CH6_MODE1", "CH6_SLEW", "CH6_TERM",
-+			"CH7_MODE0", "CH7_MODE1", "CH7_SLEW", "CH7_TERM",
-+			"CH8_MODE0", "CH8_MODE1", "CH8_SLEW", "CH8_TERM";
-+	};
- };
- 
- 
-@@ -202,135 +229,16 @@
- 
- &cp0_mdio {
- 	status = "okay";
--	phy0: ethernet-phy@0 {
--		reg = <0>;
-+	phy0: ethernet-phy@5 {
-+		reg = <5>;
- 	};
--
--	switch6: ethernet-switch@6 {
--		/* Actual device is MV88E6393X */
--		compatible = "marvell,mv88e6190";
--		reg = <6>;
--		interrupt-parent = <&cp0_gpio1>;
--		interrupts = <28 IRQ_TYPE_LEVEL_LOW>;
--		interrupt-controller;
--		#interrupt-cells = <2>;
--
--		dsa,member = <0 0>;
--
--		ethernet-ports {
--			#address-cells = <1>;
--			#size-cells = <0>;
--
--			ethernet-port@1 {
--				reg = <1>;
--				label = "p1";
--				phy-handle = <&switch0phy1>;
--			};
--
--			ethernet-port@2 {
--				reg = <2>;
--				label = "p2";
--				phy-handle = <&switch0phy2>;
--			};
--
--			ethernet-port@3 {
--				reg = <3>;
--				label = "p3";
--				phy-handle = <&switch0phy3>;
--			};
--
--			ethernet-port@4 {
--				reg = <4>;
--				label = "p4";
--				phy-handle = <&switch0phy4>;
--			};
--
--			ethernet-port@5 {
--				reg = <5>;
--				label = "p5";
--				phy-handle = <&switch0phy5>;
--			};
--
--			ethernet-port@6 {
--				reg = <6>;
--				label = "p6";
--				phy-handle = <&switch0phy6>;
--			};
--
--			ethernet-port@7 {
--				reg = <7>;
--				label = "p7";
--				phy-handle = <&switch0phy7>;
--			};
--
--			ethernet-port@8 {
--				reg = <8>;
--				label = "p8";
--				phy-handle = <&switch0phy8>;
--			};
--
--			ethernet-port@9 {
--				reg = <9>;
--				label = "p9";
--				phy-mode = "10gbase-r";
--				sfp = <&sfp>;
--				managed = "in-band-status";
--			};
--
--			ethernet-port@a {
--				reg = <10>;
--				ethernet = <&cp0_eth0>;
--				phy-mode = "10gbase-r";
--				managed = "in-band-status";
--			};
--
--		};
--
--		mdio {
--			#address-cells = <1>;
--			#size-cells = <0>;
--
--			switch0phy1: ethernet-phy@1 {
--				reg = <0x1>;
--			};
--
--			switch0phy2: ethernet-phy@2 {
--				reg = <0x2>;
--			};
--
--			switch0phy3: ethernet-phy@3 {
--				reg = <0x3>;
--			};
--
--			switch0phy4: ethernet-phy@4 {
--				reg = <0x4>;
--			};
--
--			switch0phy5: ethernet-phy@5 {
--				reg = <0x5>;
--			};
--
--			switch0phy6: ethernet-phy@6 {
--				reg = <0x6>;
--			};
--
--			switch0phy7: ethernet-phy@7 {
--				reg = <0x7>;
--			};
--
--			switch0phy8: ethernet-phy@8 {
--				reg = <0x8>;
--			};
--		};
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
- 	};
- };
- 
- &cp0_xmdio {
--	status = "okay";
--	nbaset_phy0: ethernet-phy@0 {
--		compatible = "ethernet-phy-ieee802.3-c45";
--		reg = <0>;
 -	};
-+	status = "disabled";
  };
  
- &cp0_ethernet {
-@@ -338,23 +246,48 @@
- };
- 
- &cp0_eth0 {
--	/* This port is connected to 88E6393X switch */
--	status = "okay";
--	phy-mode = "10gbase-r";
--	managed = "in-band-status";
--	phys = <&cp0_comphy4 0>;
-+	status = "disabled";
- };
- 
- &cp0_eth1 {
- 	status = "okay";
--	phy = <&phy0>;
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&cp0_ge1_rgmii_pins>;
-+	phy = <&phy1>;
- 	phy-mode = "rgmii-id";
-+	local-mac-address = [02 00 00 00 00 02];
- };
- 
- &cp0_eth2 {
--	/* This port uses "2500base-t" phy-mode */
--	status = "disabled";
--	phy = <&nbaset_phy0>;
--	phys = <&cp0_comphy5 2>;
-+	status = "okay";
-+	phy = <&phy0>;
-+	phy-mode = "sgmii";
-+	local-mac-address = [02 00 00 00 00 03];
-+};
-+
-+/* PCIe: XR17V358 runs Gen1-x1; comphy0 only, comphy3 freed for USB3 */
-+&cp0_pcie0 {
-+	num-lanes = <1>;
-+	num-viewport = <8>;
-+	phys = <&cp0_comphy0 0>;
-+	iommu-map =
-+		<0x0   &smmu 0x480 0x20>,
-+		<0x100 &smmu 0x4a0 0x20>,
-+		<0x200 &smmu 0x4c0 0x20>;
-+	iommu-map-mask = <0x031f>;
-+	status = "okay";
-+};
-+
-+&cp0_usb3_0 {
-+	status = "okay";
-+	usb-phy = <&cp0_usb3_0_phy0>;
-+	phy-names = "usb";
- };
- 
-+&cp0_usb3_1 {
-+	status = "okay";
-+	usb-phy = <&cp0_usb3_0_phy1>;
-+	phy-names = "usb";
-+	/* comphy3 = GL3523 USB3 upstream SuperSpeed (schematic CP_SRD3_USB3_TX/RX) */
-+	phys = <&cp0_comphy3 1>, <&cp0_utmi1>;
-+};
---- a/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts
-+++ b/arch/arm64/boot/dts/marvell/cn9130-crb-A.dts
-@@ -25,14 +25,4 @@
- 	iommu-map-mask = <0x031f>;
- };
- 
--&cp0_usb3_0 {
--	status = "okay";
--	usb-phy = <&cp0_usb3_0_phy0>;
--	phy-names = "usb";
--};
- 
--&cp0_usb3_1 {
--	status = "okay";
--	usb-phy = <&cp0_usb3_0_phy1>;
--	phy-names = "usb";
--};
+ &cp0_i2c1 {
