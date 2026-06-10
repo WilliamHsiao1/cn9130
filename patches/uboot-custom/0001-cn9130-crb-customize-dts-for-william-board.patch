@@ -1,172 +1,259 @@
---- a/arch/arm/dts/cn9130-crb.dtsi	2026-04-28 16:33:21.000000000 +0800
-+++ b/arch/arm/dts/cn9130-crb.dtsi	2026-05-25 18:01:56.408835239 +0800
-@@ -70,7 +70,7 @@
- 	 */
- 		/*   0 1 2 3 4 5 6 7 8 9 */
- 	pin-func = < 1 1 1 1 1 1 1 1 1 1
--		     1 3 1 0 0 0 0 0 0 3 >;
-+		     1 3 2 0 0 0 0 0 0 3 >;
- };
- 
- /* on-board eMMC - U6 */
-@@ -127,10 +127,10 @@
- 	pin-func = < 3   3   3   3   3   3   3   3   3   3
- 		     3   3   0   3   3   3   3   0   0   0
- 		     0   0   0   0   0   0   0   0   0   0
--		     0   0   0   6   9   2   2   2   2   0
--		     8   8   8   8   0   0   0   7   0   0xa
--		     0   0xa 9   7   0   0   0xe 0xe 0xe 0xe
--		     0xe 0xe 0>;
-+		     0   0   0   0   0   2   2   2   2   0
-+		     8   8   7   7   0   0   0   7   0   0
-+		     0   0   0   7   0   0   0   0   0   0
-+		     0   0   0>;
- 
- 	cp0_sdhci_cd_pins_crb: cp0-sdhci-cd-pins-crb {
- 		marvell,pins = < 55 >;
-@@ -148,8 +148,8 @@
- 	};
- 
- 	cp0_xsmi_pins_crb: cp0-xsmi-pins-crb {
--		marvell,pins = < 42 43 >;
--		marvell,function = <8>;
-+		marvell,pins = < 42 43 47 53>;
-+		marvell,function = <7>;
- 	};
- 
- };
-@@ -162,12 +162,24 @@
- 	pinctrl-0 = <&cp0_i2c0_pins>;
- 	status = "okay";
- 	clock-frequency = <100000>;
-+
-+	tpm@35 {
-+		compatible = "st,st33ktpm2xi2c", "tcg,tpm-tis-i2c";
-+		reg = <0x35>;
-+	};
-+
-+	eeprom@53 {
-+		compatible = "atmel,24c256";
-+		reg = <0x53>;
-+		pagesize = <64>;
-+	};
- };
- 
- &cp0_i2c1 {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&cp0_i2c1_pins>;
- 	status = "okay";
-+	clock-frequency = <100000>;
- };
- 
- &cp0_sdhci0 {
-@@ -229,17 +241,17 @@
- 	pinctrl-0 = <&cp0_smi_pins_crb>;
- 	status = "okay";
- 	phy0: ethernet-phy@0 {
--		reg = <0>;
-+		reg = <5>;
- 	};
--	switch6: ethernet-switch@6 {
--		reg = <6>;
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
- 	};
- };
- 
- &cp0_xmdio {
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&cp0_xsmi_pins_crb>;
--	status = "okay";
-+	status = "disabled";
- 	nbaset_phy0: ethernet-phy@0 {
- 		reg = <0>;
- 	};
-@@ -252,19 +264,22 @@
- &cp0_eth0 {
- 	status = "okay";
- 	phy-mode = "sfi";
-+	local-mac-address = [02 00 00 00 00 01];
- };
- 
- &cp0_eth1 {
- 	status = "okay";
- 	pinctrl-names = "default";
- 	pinctrl-0 = <&cp0_ge1_rgmii_pins>;
--	phy = <&phy0>;
-+	phy = <&phy1>;
- 	phy-mode = "rgmii-id";
-+	local-mac-address = [02 00 00 00 00 02];
- };
- 
- &cp0_eth2 {
- 	/* Disable it for now, as mainline does not support this IF yet */
- 	status = "okay";
--	phy = <&nbaset_phy0>;
--	phy-mode = "sgmii-2500";
-+	phy = <&phy0>;
-+	phy-mode = "sgmii";
-+	local-mac-address = [02 00 00 00 00 03];
- };
-
 --- a/arch/arm/dts/cn9130-crb-A.dts
 +++ b/arch/arm/dts/cn9130-crb-A.dts
-@@ -6,7 +6,7 @@
+@@ -1,38 +1,57 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ /*
+- * Copyright (C) 2020 Marvell International Ltd.
++ * Copyright (C) 2019 Marvell International Ltd.
+  */
+ 
  #include "cn9130-crb.dtsi"
  
  / {
--	model = "CN9130-CRB-A";
-+	model = "CN9130-CRB-A-William";
- 	compatible = "marvell,cn9130-crb-A",
- 		"marvell,cn9130",
- 		"marvell,armada-ap806-quad",
-@@ -15,34 +15,41 @@
- 
- &cp0_comphy {
- 	phy0 {
-+		/* Lane 0: PCIe Port0 (x4 capable, x1 used for XR17V358) */
- 		phy-type = <COMPHY_TYPE_PEX0>;
- 	};
- 
- 	phy1 {
--		phy-type = <COMPHY_TYPE_PEX0>;
-+		/* Lane 1: ETH Port2 → SGMII (eth2 / 1G) */
+-	model = "Marvell Armada CN9130-CRB-A";
++	model = "CN9130-CRB-A";
++	compatible = "marvell,cn9130-crb-A",
++		"marvell,cn9130",
++		"marvell,armada-ap806-quad",
++		"marvell,armada-ap806";
++};
++
++&cp0_comphy {
++	phy0 {
++		phy-type = <COMPHY_TYPE_PEX0>;
++	};
++
++	phy1 {
 +		phy-type = <COMPHY_TYPE_SGMII2>;
 +		phy-speed = <COMPHY_SPEED_1_25G>;
- 	};
- 
- 	phy2 {
--		phy-type = <COMPHY_TYPE_PEX0>;
-+		/* Lane 2: ETH Port0 → SFP+ 10G (eth0) */
++	};
++
++	phy2 {
 +		phy-type = <COMPHY_TYPE_SFI0>;
 +		phy-speed = <COMPHY_SPEED_10_3125G>;
- 	};
- 
- 	phy3 {
--		phy-type = <COMPHY_TYPE_PEX0>;
-+		/* Lane 3: USB3 Port1 Host → GL3523 USB3 upstream */
++	};
++
++	phy3 {
 +		phy-type = <COMPHY_TYPE_USB3_HOST1>;
- 	};
- 
- 	phy4 {
--		phy-type = <COMPHY_TYPE_SFI0>;
--		phy-speed = <COMPHY_SPEED_10_3125G>;
-+		/* Lane 4: PCIe Port1 (x1) */
++	};
++
++	phy4 {
 +		phy-type = <COMPHY_TYPE_PEX1>;
- 	};
- 
- 	phy5 {
--		phy-type = <COMPHY_TYPE_SGMII2>;
--		phy-speed = <COMPHY_SPEED_3_125G>;
-+		/* Lane 5: PCIe Port2 (x1) */
++	};
++
++	phy5 {
 +		phy-type = <COMPHY_TYPE_PEX2>;
- 	};
++	};
  };
  
  &cp0_pcie0 {
--	num-lanes = <4>;
-+	/* XR17V358 links at Gen1-x1; only comphy0 needed */
 +	num-lanes = <1>;
- 		/* non-prefetchable memory */
- 	ranges =<0x82000000 0 0xc0000000 0 0xc0000000 0 0x2000000>;
++		/* non-prefetchable memory */
++	ranges =<0x82000000 0 0xc0000000 0 0xc0000000 0 0x2000000>;
  	status = "okay";
+-	num-lanes = <4>;
+-	num-viewport = <8>;
+-	/* Generic PHY, providing serdes lanes */
+-	phys = <&cp0_comphy0 0
+-		&cp0_comphy1 0
+-		&cp0_comphy2 0
+-		&cp0_comphy3 0>;
+-	iommu-map =
+-		<0x0   &smmu 0x480 0x20>,
+-		<0x100 &smmu 0x4a0 0x20>,
+-		<0x200 &smmu 0x4c0 0x20>;
+-	iommu-map-mask = <0x031f>;
+ };
+ 
+ &cp0_usb3_0 {
+ 	status = "okay";
+-	usb-phy = <&cp0_usb3_0_phy0>;
+-	phy-names = "usb";
+ };
+ 
+ &cp0_usb3_1 {
+ 	status = "okay";
+-	usb-phy = <&cp0_usb3_0_phy1>;
+-	phy-names = "usb";
+ };
+--- a/arch/arm/dts/cn9130-crb-r1p3.dtsi
++++ b/arch/arm/dts/cn9130-crb-r1p3.dtsi
+@@ -1,122 +1,3 @@
+-	default 0x8000000
+-	cn9130-crb-r1p3-A.dtb			\
+-	cn9130-crb-r1p3-B.dtb			\
+-	cn9130-crb-r1p3-C.dtb			\
+-};
+-/*	phy2 {
+-*/
+-// SPDX-License-Identifier: GPL-2.0+
+-/*
+- * Copyright (C) 2019 Marvell International Ltd.
+- */
+-
+-#include "cn9130-crb.dtsi"
+-
+-/ {
+-	model = "CN9130-CRB-C (PCIe EP)";
+-	compatible = "marvell,cn9130-crb-C",
+-		"marvell,cn9130",
+-		"marvell,armada-ap806-quad",
+-		"marvell,armada-ap806";
+-
+-	reserved-memory {
+-		#address-cells = <2>;
+-		#size-cells = <2>;
+-		ranges;
+-
+-		/* The PCI console memory must be reserved */
+-		console_reserved: pci-console-nexus@3f000000 {
+-			compatible = "marvell,pci-console-nexus-memory";
+-			reg = <0 0x3f000000 0 0x1000000>;
+-			no-map;
+-		};
+-	};
+-};
+-
+-&cp0_comphy {
+-	phy0 {
+-		phy-type = <COMPHY_TYPE_IGNORE>;
+-	};
+-
+-	phy1 {
+-		phy-type = <COMPHY_TYPE_IGNORE>;
+-	};
+-
+-	phy2 {
+-		phy-type = <COMPHY_TYPE_IGNORE>;
+-	};
+-
+-	phy3 {
+-		phy-type = <COMPHY_TYPE_IGNORE>;
+-	};
+-
+-	phy4 {
+-		phy-type = <COMPHY_TYPE_SFI0>;
+-		phy-speed = <COMPHY_SPEED_10_3125G>;
+-	};
+-
+-	phy5 {
+-		phy-type = <COMPHY_TYPE_SGMII2>;
+-		phy-speed = <COMPHY_SPEED_3_125G>;
+-	};
+-};
+-
+-&cp0_bootcmd {
+-	status = "okay";
+-};
+-
+-&cp0_usb3_0 {
+-	status = "okay";
+-};
+-
+-&cp0_usb3_1 {
+-	status = "okay";
+-};
+-// SPDX-License-Identifier: GPL-2.0+
+-/*
+- * Copyright (C) 2020 Marvell International Ltd.
+- */
+-
+-#include "cn9130-crb-A.dts"
+-#include "cn9130-crb-r1p3.dtsi"
+-
+-/ {
+-	model = "CN9130-CRB-A";
+-	compatible = "marvell,cn9130-crb-A",
+-		"marvell,cn9130",
+-		"marvell,armada-ap806-quad",
+-		"marvell,armada-ap806";
+-};
+-// SPDX-License-Identifier: GPL-2.0+
+-/*
+- * Copyright (C) 2020 Marvell International Ltd.
+- */
+-
+-#include "cn9130-crb-B.dts"
+-#include "cn9130-crb-r1p3.dtsi"
+-
+-/ {
+-	model = "CN9130-CRB-B";
+-	compatible = "marvell,cn9130-crb-B",
+-		"marvell,cn9130",
+-		"marvell,armada-ap806-quad",
+-		"marvell,armada-ap806";
+-};
+-// SPDX-License-Identifier: GPL-2.0+
+-/*
+- * Copyright (C) 2020 Marvell International Ltd.
+- */
+-
+-#include "cn9130-crb-C.dts"
+-#include "cn9130-crb-r1p3.dtsi"
+-
+-/ {
+-	model = "CN9130-CRB-C (PCIe EP)";
+-	compatible = "marvell,cn9130-crb-C",
+-		"marvell,cn9130",
+-		"marvell,armada-ap806-quad",
+-		"marvell,armada-ap806";
+-};
+ // SPDX-License-Identifier: GPL-2.0+
+ /*
+  * Copyright (C) 2020 Marvell International Ltd.
+@@ -146,7 +27,7 @@
+ 	 *	[53]	UART1_RX
+ 	 *	[54]	GPIO
+ 	 *	[55]	SD_DT
+-	 *	[56-61]	SDIO
++	 *	[61-61]	SDIO
+ 	 */
+ 		/*   0   1   2   3   4   5   6   7   8   9 */
+ 	pin-func = < 3   3   3   3   3   3   3   3   3   3
+@@ -158,19 +39,33 @@
+ 		     0xe 0xe 0xe>;
+ };
+ 
++&cp0_comphy {
++	phy0 {
++		phy-type = <COMPHY_TYPE_PEX0>;
++	};
++	phy1 {
++		phy-type = <COMPHY_TYPE_SGMII2>;
++		phy-speed = <COMPHY_SPEED_1_25G>;
++	};
++	phy2 {
++		phy-type = <COMPHY_TYPE_SFI0>;
++		phy-speed = <COMPHY_SPEED_10_3125G>;
++	};
++	phy3 {
++		phy-type = <COMPHY_TYPE_USB3_HOST1>;
++	};
++	phy4 {
++		phy-type = <COMPHY_TYPE_PEX1>;
++	};
++	phy5 {
++		phy-type = <COMPHY_TYPE_PEX2>;
++	};
++};
++
++&cp0_pcie0 {
++	num-lanes = <1>;
++};
++
+ &cp0_spi1 {
+ 	pinctrl-0 = <&cp0_spi0_pins>;
+ };
+-/*&ap_hd_efuse0 {
+-*/
+-	struct cpu_plat *plat = dev_get_parent_plat(dev);
+-	struct cpu_plat *plat = dev_get_parent_plat(dev);
+-	struct cpu_plat *plat = dev_get_parent_plat(dev);
+-	strlcpy(info->cpu_type, "ARMv8", 5);
+-	struct cpu_plat *plat = dev_get_parent_plat(dev);
+-	default 0x0
+-# CONFIG_DEBUG_UART_ANNOUNCE is not set
+-typedef struct bd_info {
+-} bd_t;
+-#include <asm/global_data.h>	/* global data used for startup functions */
+-obj-y += efi_signature.o

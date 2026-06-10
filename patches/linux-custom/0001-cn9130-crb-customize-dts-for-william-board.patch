@@ -1,73 +1,357 @@
 --- a/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
 +++ b/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
-@@ -26,32 +26,12 @@
+@@ -26,7 +26,7 @@
  		reg = <0x0 0x0 0x0 0x80000000>;
  	};
  
 -	ap0_reg_mmc_vccq: regulator-1 {
--		compatible = "regulator-gpio";
--		regulator-name = "ap0_mmc_vccq";
--		regulator-min-microvolt = <1800000>;
--		regulator-max-microvolt = <3300000>;
--		gpios = <&expander0 5 GPIO_ACTIVE_HIGH>;
--		states = <1800000 0x1
--			  3300000 0x0>;
--	};
--
++	ap0_reg_mmc_vccq: ap0_mmc_vccq@0 {
+ 		compatible = "regulator-gpio";
+ 		regulator-name = "ap0_mmc_vccq";
+ 		regulator-min-microvolt = <1800000>;
+@@ -36,7 +36,7 @@
+ 			  3300000 0x0>;
+ 	};
+ 
 -	cp0_reg_usb3_vbus1: regulator-2 {
--		compatible = "regulator-fixed";
--		regulator-name = "cp0-xhci1-vbus";
--		regulator-min-microvolt = <5000000>;
--		regulator-max-microvolt = <5000000>;
--		enable-active-high;
--		gpio = <&expander0 8 GPIO_ACTIVE_HIGH>;
--	};
--
- 	cp0_usb3_0_phy0: usb-phy-1 {
++	cp0_reg_usb3_vbus1: cp0_usb3_vbus@1 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "cp0-xhci1-vbus";
+ 		regulator-min-microvolt = <5000000>;
+@@ -45,16 +45,16 @@
+ 		gpio = <&expander0 8 GPIO_ACTIVE_HIGH>;
+ 	};
+ 
+-	cp0_usb3_0_phy0: usb-phy-1 {
++	cp0_usb3_0_phy0: cp0_usb3_phy0 {
  		compatible = "usb-nop-xceiv";
  	};
  
- 	cp0_usb3_0_phy1: usb-phy-2 {
+-	cp0_usb3_0_phy1: usb-phy-2 {
++	cp0_usb3_0_phy1: cp0_usb3_phy1 {
  		compatible = "usb-nop-xceiv";
--		vcc-supply = <&cp0_reg_usb3_vbus1>;
+ 		vcc-supply = <&cp0_reg_usb3_vbus1>;
  	};
  
- 	cp0_reg_sd_vccq: regulator-3 {
-@@ -77,10 +57,10 @@
+-	cp0_reg_sd_vccq: regulator-3 {
++	cp0_reg_sd_vccq: cp0_sd_vccq@0 {
+ 		compatible = "regulator-gpio";
+ 		regulator-name = "cp0_sd_vccq";
+ 		regulator-min-microvolt = <1800000>;
+@@ -64,7 +64,7 @@
+ 			  3300000 0x0>;
+ 	};
+ 
+-	cp0_reg_sd_vcc: regulator-4 {
++	cp0_reg_sd_vcc: cp0_sd_vcc@0 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "cp0_sd_vcc";
+ 		regulator-min-microvolt = <3300000>;
+@@ -76,12 +76,26 @@
+ 
  	sfp: sfp {
  		compatible = "sff,sfp";
- 		i2c-bus = <&cp0_i2c1>;
+-		i2c-bus = <&cp0_i2c1>;
 -		mod-def0-gpios = <&expander0 3 GPIO_ACTIVE_LOW>;
 -		los-gpios = <&expander0 15 GPIO_ACTIVE_HIGH>;
 -		tx-disable-gpios = <&expander0 2 GPIO_ACTIVE_HIGH>;
 -		tx-fault-gpios = <&cp0_gpio1 24 GPIO_ACTIVE_HIGH>;
-+		mod-def0-gpios    = <&cp0_gpio2 27 GPIO_ACTIVE_LOW>;   /* SFP_SE_DETECT_L= CP_MPP59 (SFP0_DETECT_L also on MPP29) */
-+		los-gpios         = <&cp0_gpio2 26 GPIO_ACTIVE_HIGH>;  /* SFP_SE_LOS     = CP_MPP58 (SFP0_LOS      also on MPP27) */
-+		tx-disable-gpios  = <&cp0_gpio2 25 GPIO_ACTIVE_HIGH>;  /* SFP_SE_TX_DIS  = CP_MPP57 (SFP0_TX_DIS   also on MPP28) */
-+		tx-fault-gpios    = <&cp0_gpio2 24 GPIO_ACTIVE_HIGH>;  /* SFP_SE_TX_FAULT= CP_MPP56 */
++		i2c-bus = <&cp0_i2c0>;  /* SFP_SE 10G: I2C on cp0_i2c0 (MPP37/38) */
++		/* SFP_SE GPIO: CP0 MPP56-59 (cp0_gpio2 pins 24-27) → eth0 10G XFI */
++		mod-def0-gpios    = <&cp0_gpio2 27 GPIO_ACTIVE_LOW>;   /* MPP59: SFP_SE_DETECT_L */
++		los-gpios         = <&cp0_gpio2 26 GPIO_ACTIVE_HIGH>;  /* MPP58: SFP_SE_LOS */
++		tx-disable-gpios  = <&cp0_gpio2 25 GPIO_ACTIVE_HIGH>;  /* MPP57: SFP_SE_TX_DIS */
++		tx-fault-gpios    = <&cp0_gpio2 24 GPIO_ACTIVE_HIGH>;  /* MPP56: SFP_SE_TX_FAULT */
  		maximum-power-milliwatt = <3000>;
++		status = "okay";
++	};
++
++	sfp0: sfp0 {
++		compatible = "sff,sfp";
++		i2c-bus = <&cp0_i2c1>;  /* SFP0 1G: I2C on cp0_i2c1 (MPP35/36), EEPROM found at 0x50 */
++		/* SFP0 GPIO: CP0 MPP24,27,28,29 (cp0_gpio1) → eth2 1G SGMII */
++		mod-def0-gpios    = <&cp0_gpio1 29 GPIO_ACTIVE_LOW>;   /* MPP29: SFP0_DETECT_L */
++		los-gpios         = <&cp0_gpio1 27 GPIO_ACTIVE_HIGH>;  /* MPP27: SFP0_LOS */
++		tx-disable-gpios  = <&cp0_gpio1 28 GPIO_ACTIVE_HIGH>;  /* MPP28: SFP0_TX_DIS */
++		tx-fault-gpios    = <&cp0_gpio1 24 GPIO_ACTIVE_HIGH>;  /* MPP24: SFP0_TX_FAULT */
++		maximum-power-milliwatt = <3000>;
++		status = "okay";
  	};
  };
-@@ -95,7 +75,7 @@
+ 
+@@ -95,7 +109,8 @@
  	bus-width = <8>;
  	status = "okay";
  	mmc-ddr-1_8v;
 -	vqmmc-supply = <&ap0_reg_mmc_vccq>;
-+	/* vqmmc-supply = <&ap0_reg_mmc_vccq>; TODO: enable after MCP23017 verified */
++	/* vqmmc-supply removed: ap0_reg_mmc_vccq depends on MCP23017 (expander0)
++	 * which is not present on this board, causing deferred probe chain */
  };
  
  &cp0_syscon0 {
-@@ -139,13 +119,6 @@
- 	pinctrl-0 = <&cp0_i2c0_pins>;
+@@ -114,12 +129,35 @@
+ 			marvell,pins = "mpp55";
+ 			marvell,function = "gpio";
+ 		};
+-		cp0_sdhci_pins: cp0-sdhi-pins-0 {
+-			marvell,pins = "mpp56", "mpp57", "mpp58",
+-				       "mpp59", "mpp60", "mpp61";
+-			marvell,function = "sdio";
++		/* cp0_sdhci_pins removed: MPP56-61 repurposed for SFP GPIO (MPP56-59) */
++		cp0_sfp_gpio_pins: cp0-sfp-gpio-pins {
++			/* SFP_SE: 10G XFI port (eth0) GPIO pins */
++			marvell,pins = "mpp56", "mpp57", "mpp58", "mpp59";
++			marvell,function = "gpio";
++		};
++		cp0_sfp0_gpio_pins: cp0-sfp0-gpio-pins {
++			/* SFP0: 1G SGMII port (eth2) GPIO pins */
++			marvell,pins = "mpp24", "mpp27", "mpp28", "mpp29";
++			marvell,function = "gpio";
++		};
++		cp0_ge1_rgmii_pins: cp0-ge1-rgmii-pins {
++			/* eth1 RGMII: 88E1512 PHY (MPP0-11, function ge0) */
++			marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
++				       "mpp4", "mpp5", "mpp6", "mpp7",
++				       "mpp8", "mpp9", "mpp10", "mpp11";
++			marvell,function = "ge0";
++		};
++		cp0_smi_pins: cp0-smi-pins {
++			/* MDIO management bus for 88E1512 PHY (MPP40=MDIO, MPP41=MDC) */
++			marvell,pins = "mpp40", "mpp41";
++			marvell,function = "ge";
++		};
++		cp0_uart1_pins: cp0-uart1-pins {
++			/* UART1: TX=MPP47, RX=MPP53, CTS=MPP42, RTS=MPP43 */
++			marvell,pins = "mpp42", "mpp43", "mpp47", "mpp53";
++			marvell,function = "uart1";
+ 		};
+-		cp0_spi1_pins: cp0-spi-pins-1 {
++		cp0_spi0_pins: cp0-spi-pins-0 {
+ 			marvell,pins = "mpp13", "mpp14", "mpp15", "mpp16";
+ 			marvell,function = "spi1";
+ 		};
+@@ -134,6 +172,12 @@
  	status = "okay";
- 	clock-frequency = <100000>;
--	expander0: mcp23x17@20 {
--		compatible = "microchip,mcp23017";
--		gpio-controller;
--		#gpio-cells = <2>;
--		reg = <0x20>;
--		status = "okay";
--	};
  };
  
- &cp0_i2c1 {
++&cp0_uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&cp0_uart1_pins>;
++	status = "okay";
++};
++
+ &cp0_i2c0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&cp0_i2c0_pins>;
+@@ -157,19 +201,13 @@
+ 
+ 
+ &cp0_sdhci0 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&cp0_sdhci_pins
+-		     &cp0_sdhci_cd_pins_crb>;
+-	bus-width = <4>;
+-	cd-gpios = <&cp0_gpio2 23 GPIO_ACTIVE_HIGH>;
+-	vqmmc-supply = <&cp0_reg_sd_vccq>;
+-	vmmc-supply = <&cp0_reg_sd_vcc>;
+-	status = "okay";
++	/* Disabled: MPP56-61 are repurposed for SFP GPIO signals on r1p3 board */
++	status = "disabled";
+ };
+ 
+ &cp0_spi1 {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&cp0_spi1_pins>;
++	pinctrl-0 = <&cp0_spi0_pins>;
+ 	reg = <0x700680 0x50>,		/* control */
+ 	      <0x2000000 0x1000000>;	/* CS0 */
+ 	status = "okay";
+@@ -201,14 +239,20 @@
+ };
+ 
+ &cp0_mdio {
++	pinctrl-names = "default";
++	pinctrl-0 = <&cp0_smi_pins>;
+ 	status = "okay";
+ 	phy0: ethernet-phy@0 {
++		/* Marvell 88E1512 GbE PHY, MDIO addr 0 */
++		compatible = "ethernet-phy-id0141.0dd0";
+ 		reg = <0>;
+ 	};
+ 
+-	switch6: ethernet-switch@6 {
++	switch6: switch0@6 {
+ 		/* Actual device is MV88E6393X */
+ 		compatible = "marvell,mv88e6190";
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		reg = <6>;
+ 		interrupt-parent = <&cp0_gpio1>;
+ 		interrupts = <28 IRQ_TYPE_LEVEL_LOW>;
+@@ -217,67 +261,67 @@
+ 
+ 		dsa,member = <0 0>;
+ 
+-		ethernet-ports {
++		ports {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 
+-			ethernet-port@1 {
++			port@1 {
+ 				reg = <1>;
+-				label = "p1";
++				label = "wan1";
+ 				phy-handle = <&switch0phy1>;
+ 			};
+ 
+-			ethernet-port@2 {
++			port@2 {
+ 				reg = <2>;
+-				label = "p2";
++				label = "lan2";
+ 				phy-handle = <&switch0phy2>;
+ 			};
+ 
+-			ethernet-port@3 {
++			port@3 {
+ 				reg = <3>;
+-				label = "p3";
++				label = "lan3";
+ 				phy-handle = <&switch0phy3>;
+ 			};
+ 
+-			ethernet-port@4 {
++			port@4 {
+ 				reg = <4>;
+-				label = "p4";
++				label = "lan4";
+ 				phy-handle = <&switch0phy4>;
+ 			};
+ 
+-			ethernet-port@5 {
++			port@5 {
+ 				reg = <5>;
+-				label = "p5";
++				label = "lan5";
+ 				phy-handle = <&switch0phy5>;
+ 			};
+ 
+-			ethernet-port@6 {
++			port@6 {
+ 				reg = <6>;
+-				label = "p6";
++				label = "lan6";
+ 				phy-handle = <&switch0phy6>;
+ 			};
+ 
+-			ethernet-port@7 {
++			port@7 {
+ 				reg = <7>;
+-				label = "p7";
++				label = "lan7";
+ 				phy-handle = <&switch0phy7>;
+ 			};
+ 
+-			ethernet-port@8 {
++			port@8 {
+ 				reg = <8>;
+-				label = "p8";
++				label = "lan8";
+ 				phy-handle = <&switch0phy8>;
+ 			};
+ 
+-			ethernet-port@9 {
++			port@9 {
+ 				reg = <9>;
+-				label = "p9";
++				label = "wanp9";
+ 				phy-mode = "10gbase-r";
+ 				sfp = <&sfp>;
+ 				managed = "in-band-status";
+ 			};
+ 
+-			ethernet-port@a {
++			port@a {
+ 				reg = <10>;
+ 				ethernet = <&cp0_eth0>;
+ 				phy-mode = "10gbase-r";
+@@ -290,35 +334,35 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 
+-			switch0phy1: ethernet-phy@1 {
++			switch0phy1: switch0phy1@1 {
+ 				reg = <0x1>;
+ 			};
+ 
+-			switch0phy2: ethernet-phy@2 {
++			switch0phy2: switch0phy2@2 {
+ 				reg = <0x2>;
+ 			};
+ 
+-			switch0phy3: ethernet-phy@3 {
++			switch0phy3: switch0phy3@3 {
+ 				reg = <0x3>;
+ 			};
+ 
+-			switch0phy4: ethernet-phy@4 {
++			switch0phy4: switch0phy4@4 {
+ 				reg = <0x4>;
+ 			};
+ 
+-			switch0phy5: ethernet-phy@5 {
++			switch0phy5: switch0phy5@5 {
+ 				reg = <0x5>;
+ 			};
+ 
+-			switch0phy6: ethernet-phy@6 {
++			switch0phy6: switch0phy6@6 {
+ 				reg = <0x6>;
+ 			};
+ 
+-			switch0phy7: ethernet-phy@7 {
++			switch0phy7: switch0phy7@7 {
+ 				reg = <0x7>;
+ 			};
+ 
+-			switch0phy8: ethernet-phy@8 {
++			switch0phy8: switch0phy8@8 {
+ 				reg = <0x8>;
+ 			};
+ 		};
+@@ -338,23 +382,28 @@
+ };
+ 
+ &cp0_eth0 {
+-	/* This port is connected to 88E6393X switch */
++	/* ETH Port 0: XFI 10G via Lane 2 (SFI0) → SFP_SE cage (MPP56-59) */
+ 	status = "okay";
+ 	phy-mode = "10gbase-r";
++	sfp = <&sfp>;
+ 	managed = "in-band-status";
+-	phys = <&cp0_comphy4 0>;
++	phys = <&cp0_comphy2 0>;
+ };
+ 
+ &cp0_eth1 {
+ 	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&cp0_ge1_rgmii_pins>;
+ 	phy = <&phy0>;
+ 	phy-mode = "rgmii-id";
+ };
+ 
+ &cp0_eth2 {
+-	/* This port uses "2500base-t" phy-mode */
+-	status = "disabled";
+-	phy = <&nbaset_phy0>;
+-	phys = <&cp0_comphy5 2>;
++	/* ETH Port 2: SFP0 via Lane 1 (SGMII2 1G) → SFP0 cage (MPP24,27,28,29) */
++	status = "okay";
++	phy-mode = "sgmii";
++	sfp = <&sfp0>;
++	managed = "in-band-status";
++	phys = <&cp0_comphy1 2>;
+ };
+ 
