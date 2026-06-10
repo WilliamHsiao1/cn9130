@@ -1,0 +1,19 @@
+--- a/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
++++ b/arch/arm64/boot/dts/marvell/cn9130-crb.dtsi
+@@ -103,6 +103,15 @@
+ 	status = "okay";
+ };
+ 
++/* AP MPP12 = AP_SD_HW_RST: eMMC hardware reset signal */
++&ap_pinctrl {
++	emmc_rst_pins: emmc-rst-pins {
++		marvell,pins = "mpp12";
++		marvell,function = "sdio";
++	};
++};
++
+ /* on-board eMMC U6 */
+ &ap_sdhci0 {
+ 	pinctrl-names = "default";
++	pinctrl-0 = <&emmc_rst_pins>;
+ 	bus-width = <8>;
